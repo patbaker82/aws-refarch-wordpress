@@ -23,6 +23,7 @@ Metadata:
           - WPDomainName
           - DnsEndpoint
           - DnsHostId
+          - HostedZoneId
     ParameterLabels:
       DnsEndpoint:
         default: DNS Endpoint
@@ -30,6 +31,8 @@ Metadata:
         default: DNS Host Id
       WPDomainName:
         default: Site Domain
+      HostedZoneId:
+        default: Existing Hosted Zone Id
 
 Parameters:
   DnsEndpoint:
@@ -44,12 +47,32 @@ Parameters:
     AllowedPattern: ^(?!http)(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$
     Description: The main domain name of the WordPress site (e.g. example.com).
     Type: String
+  HostedZoneId:
+    Description: '[Optional] Route53 Hosted Zone ID'
+    Type: AWS::Route53::HostedZone::Id
+
+Conditions:
+  UseExistingRecordSet: !Not [!Equals ['', !Ref ExistingRoute53Domain]]
+  DontUseExistingRecordSet: !Equals ['', !Ref ExistingRoute53Domain]]
 
 Resources:
-  RecordSet:
+  NewRecordSet:
+    Condition: DontUseExistingRecordSet
     Type: AWS::Route53::RecordSetGroup
     Properties:
       HostedZoneName: !Join ['', [!Ref WPDomainName, '.']]
+      RecordSets:
+        - Name: !Join ['', ['www.', !Ref WPDomainName, '.']]
+          Type: A
+          AliasTarget:
+            DNSName: !Ref DnsEndpoint
+            EvaluateTargetHealth: True
+            HostedZoneId: !Ref DnsHostId
+  ExistingRecordSet:
+    Condition: UseExistingRecordSet
+    Type: AWS::Route53::RecordSetGroup
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
       RecordSets:
         - Name: !Join ['', ['www.', !Ref WPDomainName, '.']]
           Type: A

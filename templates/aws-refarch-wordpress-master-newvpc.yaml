@@ -1,5 +1,4 @@
 AWSTemplateFormatVersion: 2010-09-09
-
 Description: Stack to deploy a highly available, elastic, scalable WordPress environment. This master stack launches multiple nested stacks for different tiers. !! This can only be run in certain AWS Regions - 'us-east-1', 'us-east-2', 'us-west-2', 'eu-west-1'.
 
 Metadata:
@@ -25,8 +24,10 @@ Metadata:
           - AdminEmail
           - WPDomainName
           - UseRoute53Boolean
+          - ExistingRoute53Domain
           - UseCloudFrontBoolean
           - CloudFrontAcmCertificate
+          - S3BucketURL
       - Label:
           default: Network
         Parameters:
@@ -37,21 +38,12 @@ Metadata:
           - PublicSubnet0Cidr
           - PublicSubnet1Cidr
           - PublicSubnet2Cidr
-          - PublicSubnet3Cidr
-          - PublicSubnet4Cidr
-          - PublicSubnet5Cidr
           - WebSubnet0Cidr
           - WebSubnet1Cidr
           - WebSubnet2Cidr
-          - WebSubnet3Cidr
-          - WebSubnet4Cidr
-          - WebSubnet5Cidr
           - DataSubnet0Cidr
           - DataSubnet1Cidr
           - DataSubnet2Cidr
-          - DataSubnet3Cidr
-          - DataSubnet4Cidr
-          - DataSubnet5Cidr
       - Label:
           default: File System Tier
         Parameters:
@@ -98,6 +90,8 @@ Metadata:
           - WPDirectory
           - WPLocale
     ParameterLabels:
+      S3BucketURL:
+        default: S3 location of cloud formation
       BastionInstanceType:
         default: Bastion Instance Type
       CloudFrontAcmCertificate:
@@ -148,6 +142,8 @@ Metadata:
         default: CDN (CloudFront)
       UseRoute53Boolean:
         default: DNS record set (Route53)
+      ExistingRoute53Domain:
+        default: Hosted Zone ID
       WebAsgMax:
         default: Web ASG Max
       WebAsgMin:
@@ -186,36 +182,18 @@ Metadata:
         default: Public Subnet 1
       PublicSubnet2Cidr:
         default: Public Subnet 2
-      PublicSubnet3Cidr:
-        default: Public Subnet 3
-      PublicSubnet4Cidr:
-        default: Public Subnet 4
-      PublicSubnet5Cidr:
-        default: Public Subnet 5
       WebSubnet0Cidr:
         default: Web Subnet 0
       WebSubnet1Cidr:
         default: Web Subnet 1
       WebSubnet2Cidr:
         default: Web Subnet 2
-      WebSubnet3Cidr:
-        default: Web Subnet 3
-      WebSubnet4Cidr:
-        default: Web Subnet 4
-      WebSubnet5Cidr:
-        default: Web Subnet 5
       DataSubnet0Cidr:
         default: Data Subnet 0
       DataSubnet1Cidr:
         default: Data Subnet 1
       DataSubnet2Cidr:
         default: Data Subnet 2
-      DataSubnet3Cidr:
-        default: Data Subnet 3
-      DataSubnet4Cidr:
-        default: Data Subnet 4
-      DataSubnet5Cidr:
-        default: Data Subnet 5
 
 Parameters:
   BastionInstanceType:
@@ -312,6 +290,9 @@ Parameters:
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
     Default: t2.nano
     Description: Bastion EC2 instance type.
+    Type: String
+  S3BucketURL:
+    Description: S3 Bucket URL
     Type: String
   CloudFrontAcmCertificate:
     AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
@@ -668,6 +649,9 @@ Parameters:
     Default: true
     Description: Specifies whether a record set should be created in Route 53 for your WordPress domain name.
     Type: String
+  ExistingRoute53Domain:
+    Description: '[Optional] Existing Route53 Hosted Zone ID'
+    Type: AWS::Route53::HostedZone::Id
   WebAsgMax:
     AllowedPattern: ^((?!0$)[1-2]?[0-9]|30)$
     ConstraintDescription: Must be a number between 1 and 30.
@@ -822,9 +806,6 @@ Parameters:
     AllowedValues:
       - 2
       - 3
-      - 4
-      - 5
-      - 6
     Default: 3
     Description:
       Number of Availability Zones to use in the VPC. This must match your
@@ -861,24 +842,6 @@ Parameters:
     Default: 10.0.102.0/24
     Description: CIDR block for data subnet 2 located in Availability Zone 2
     Type: String
-  DataSubnet3Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.103.0/24
-    Description: CIDR block for data subnet 3 located in Availability Zone 3
-    Type: String
-  DataSubnet4Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.104.0/24
-    Description: CIDR block for data subnet 4 located in Availability Zone 4
-    Type: String
-  DataSubnet5Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.105.0/24
-    Description: CIDR block for data subnet 5 located in Availability Zone 5
-    Type: String
   PublicSubnet0Cidr:
     AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
@@ -897,24 +860,6 @@ Parameters:
     Default: 10.0.202.0/24
     Description: CIDR block for Public subnet 2 located in Availability Zone 2
     Type: String
-  PublicSubnet3Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.203.0/24
-    Description: CIDR block for Public subnet 3 located in Availability Zone 3
-    Type: String
-  PublicSubnet4Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.204.0/24
-    Description: CIDR block for Public subnet 4 located in Availability Zone 4
-    Type: String
-  PublicSubnet5Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.205.0/24
-    Description: CIDR block for Public subnet 5 located in Availability Zone 5
-    Type: String
   WebSubnet0Cidr:
     AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
@@ -932,24 +877,6 @@ Parameters:
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
     Default: 10.0.8.0/22
     Description: CIDR block for Web subnet 2 located in Availability Zone 2
-    Type: String
-  WebSubnet3Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.12.0/22
-    Description: CIDR block for Web subnet 3 located in Availability Zone 3
-    Type: String
-  WebSubnet4Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.16.0/22
-    Description: CIDR block for Web subnet 4 located in Availability Zone 4
-    Type: String
-  WebSubnet5Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.20.0/22
-    Description: CIDR block for Web subnet 5 located in Availability Zone 5
     Type: String
   WPVersion:
     AllowedValues:
@@ -978,6 +905,11 @@ Conditions:
   EfsCreateNoAlarms: !Equals [false, !Ref EfsCreateAlarms]
   CreateRecordSet: !And
     - !Equals [true, !Ref UseRoute53Boolean]
+    - !Equals ['', !Ref ExistingRoute53Domain]
+    - !Condition AvailableAWSRegion
+  UseExistingRecordSet: !And
+    - !Equals [true, !Ref UseRoute53Boolean]
+    - !Not [!Equals ['', !Ref ExistingRoute53Domain]]
     - !Condition AvailableAWSRegion
   DeployCloudFront: !And
     - !Equals [true, !Ref UseCloudFrontBoolean]
@@ -985,7 +917,6 @@ Conditions:
   DeployElastiCache: !And
     - !Equals [true, !Ref UseElastiCacheBoolean]
     - !Condition AvailableAWSRegion
-
 Resources:
   bastion:
     Condition: AvailableAWSRegion
@@ -999,7 +930,9 @@ Resources:
         EC2KeyName: !Ref EC2KeyName
         NumberOfSubnets: !Ref NumberOfAZs
         Subnet: !GetAtt [newvpc, Outputs.PublicSubnet]
-      TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-03-bastion.yaml
+      TemplateURL: !Sub
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-03-bastion.yaml'
+        - { S3BucketURL: !Ref S3BucketURL }
   cloudfront:
     Condition: DeployCloudFront
     DependsOn: [publicalb, web]
@@ -1009,7 +942,9 @@ Resources:
         CloudFrontAcmCertificate: !Ref CloudFrontAcmCertificate
         PublicAlbDnsName: !GetAtt [publicalb, Outputs.PublicAlbDnsName]
         WPDomainName: !Ref WPDomainName
-      TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-04-cloudfront.yaml
+      TemplateURL: !Sub
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-04-cloudfront.yaml'
+        - { S3BucketURL: !Ref S3BucketURL }
   dashboardwithalarms:
     Condition: EfsCreateAlarms
     DependsOn:
@@ -1027,7 +962,9 @@ Resources:
         WarningAlarmArn: !GetAtt [efsalarms, Outputs.WarningAlarmArn]
         PublicAlbFullName: !GetAtt [publicalb, Outputs.PublicAlbFullName]
         EfsCreateAlarms: !Ref EfsCreateAlarms
-      TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-06-dashboard.yaml
+      TemplateURL: !Sub
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-06-dashboard.yaml'
+        - { S3BucketURL: !Ref S3BucketURL }
   dashboardwithnoalarms:
     Condition: EfsCreateNoAlarms
     DependsOn: [newvpc, securitygroups, publicalb, efsfilesystem, rds]
@@ -1038,7 +975,9 @@ Resources:
         DatabaseCluster: !GetAtt [rds, Outputs.DatabaseCluster]
         PublicAlbFullName: !GetAtt [publicalb, Outputs.PublicAlbFullName]
         EfsCreateAlarms: !Ref EfsCreateAlarms
-      TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-06-dashboard.yaml
+      TemplateURL: !Sub
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-06-dashboard.yaml'
+        - { S3BucketURL: !Ref S3BucketURL }
   efsfilesystem:
     DependsOn: [newvpc, securitygroups]
     Type: AWS::CloudFormation::Stack
@@ -1053,7 +992,9 @@ Resources:
         NumberOfSubnets: !Ref NumberOfAZs
         PerformanceMode: !Ref EfsPerformanceMode
         Subnet: !GetAtt [newvpc, Outputs.DataSubnet]
-      TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-03-efsfilesystem.yaml
+      TemplateURL: !Sub
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-03-efsfilesystem.yaml'
+        - { S3BucketURL: !Ref S3BucketURL }
   efsalarms:
     Condition: EfsCreateAlarms
     DependsOn: [efsfilesystem]
@@ -1069,7 +1010,9 @@ Resources:
         NumberOfSubnets: !Ref NumberOfAZs
         Subnet: !GetAtt [newvpc, Outputs.DataSubnet]
         WarningThreshold: !Ref EfsWarningThreshold
-      TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-03-efsalarms.yaml
+      TemplateURL: !Sub
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-03-efsalarms.yaml'
+        - { S3BucketURL: !Ref S3BucketURL }
   elasticache:
     Condition: DeployElastiCache
     DependsOn: [newvpc, securitygroups]
@@ -1081,7 +1024,9 @@ Resources:
         ElastiCacheSecurityGroup:
           !GetAtt [securitygroups, Outputs.ElastiCacheSecurityGroup]
         NumberOfSubnets: !Ref NumberOfAZs
-      TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-03-elasticache.yaml
+      TemplateURL: !Sub
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-03-elasticache.yaml'
+        - { S3BucketURL: !Ref S3BucketURL }
   newvpc:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -1095,22 +1040,15 @@ Resources:
         PublicSubnet0Cidr: !Ref PublicSubnet0Cidr
         PublicSubnet1Cidr: !Ref PublicSubnet1Cidr
         PublicSubnet2Cidr: !Ref PublicSubnet2Cidr
-        PublicSubnet3Cidr: !Ref PublicSubnet3Cidr
-        PublicSubnet4Cidr: !Ref PublicSubnet4Cidr
-        PublicSubnet5Cidr: !Ref PublicSubnet5Cidr
         WebSubnet0Cidr: !Ref WebSubnet0Cidr
         WebSubnet1Cidr: !Ref WebSubnet1Cidr
         WebSubnet2Cidr: !Ref WebSubnet2Cidr
-        WebSubnet3Cidr: !Ref WebSubnet3Cidr
-        WebSubnet4Cidr: !Ref WebSubnet4Cidr
-        WebSubnet5Cidr: !Ref WebSubnet5Cidr
         DataSubnet0Cidr: !Ref DataSubnet0Cidr
         DataSubnet1Cidr: !Ref DataSubnet1Cidr
         DataSubnet2Cidr: !Ref DataSubnet2Cidr
-        DataSubnet3Cidr: !Ref DataSubnet3Cidr
-        DataSubnet4Cidr: !Ref DataSubnet4Cidr
-        DataSubnet5Cidr: !Ref DataSubnet5Cidr
-      TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-01-newvpc.yaml
+      TemplateURL: !Sub
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-01-newvpc.yaml'
+        - { S3BucketURL: !Ref S3BucketURL }
   publicalb:
     Condition: AvailableAWSRegion
     DependsOn: [newvpc, securitygroups]
@@ -1123,7 +1061,9 @@ Resources:
         PublicAlbSecurityGroup:
           !GetAtt [securitygroups, Outputs.PublicAlbSecurityGroup]
         Vpc: !GetAtt [newvpc, Outputs.Vpc]
-      TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-03-publicalb.yaml
+      TemplateURL: !Sub
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-03-publicalb.yaml'
+        - { S3BucketURL: !Ref S3BucketURL }
   rds:
     Condition: AvailableAWSRegion
     DependsOn: [newvpc, securitygroups]
@@ -1140,7 +1080,9 @@ Resources:
           !GetAtt [securitygroups, Outputs.DatabaseSecurityGroup]
         Subnet: !GetAtt [newvpc, Outputs.DataSubnet]
         NumberOfSubnets: !Ref NumberOfAZs
-      TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-03-rds.yaml
+      TemplateURL: !Sub
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-03-rds.yaml'
+        - { S3BucketURL: !Ref S3BucketURL }
   route53:
     Condition: CreateRecordSet
     DependsOn: [publicalb, web]
@@ -1160,7 +1102,32 @@ Resources:
             !GetAtt [publicalb, Outputs.PublicAlbCanonicalHostedZoneId],
           ]
         WPDomainName: !Ref WPDomainName
-      TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-05-route53.yaml
+      TemplateURL: !Sub
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-05-route53-acm.yaml'
+        - { S3BucketURL: !Ref S3BucketURL }
+  route53existing:
+    Condition: UseExistingRecordSet
+    DependsOn: [publicalb, web]
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        HostedZoneId: !Ref ExistingRoute53Domain
+        DnsEndpoint:
+          !If [
+            DeployCloudFront,
+            !GetAtt [cloudfront, Outputs.DnsEndpoint],
+            !GetAtt [publicalb, Outputs.PublicAlbDnsName],
+          ]
+        DnsHostId:
+          !If [
+            DeployCloudFront,
+            'Z2FDTNDATAQYW2',
+            !GetAtt [publicalb, Outputs.PublicAlbCanonicalHostedZoneId],
+          ]
+        WPDomainName: !Ref WPDomainName
+      TemplateURL: !Sub
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-05-route53-acm.yaml'
+        - { S3BucketURL: !Ref S3BucketURL }
   securitygroups:
     Condition: AvailableAWSRegion
     DependsOn: newvpc
@@ -1169,7 +1136,9 @@ Resources:
       Parameters:
         SshAccessCidr: !Ref SshAccessCidr
         Vpc: !GetAtt [newvpc, Outputs.Vpc]
-      TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-02-securitygroups.yaml
+      TemplateURL: !Sub
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-02-securitygroups.yaml'
+        - { S3BucketURL: !Ref S3BucketURL }
   web:
     Condition: AvailableAWSRegion
     DependsOn: [efsfilesystem, newvpc, publicalb, securitygroups]
@@ -1203,8 +1172,9 @@ Resources:
         WPLocale: !Ref WPLocale
         WPTitle: !Ref WPTitle
         WPVersion: !Ref WPVersion
-      TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-04-web.yaml
-
+      TemplateURL: !Sub
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-04-web.yaml'
+        - { S3BucketURL: !Ref S3BucketURL }
 Outputs:
   StackStatus:
     Description: Master Stack Status

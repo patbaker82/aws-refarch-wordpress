@@ -156,12 +156,6 @@ Parameters:
     Default: generalPurpose
     Description: Select the performance mode of the file system.
     Type: String
-  EfsCopyDataFrom:
-    Description: Clone EFS from existing EFS
-    Type: String
-  WPDirectory:
-    Description: Wordpress directory
-    Type: String
   SecurityGroup:
     Description: Select the Amazon EFS security group.
     Type: AWS::EC2::SecurityGroup::Id
@@ -327,13 +321,13 @@ Resources:
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
-      Cooldown: 60
+      Cooldown: '60'
       HealthCheckGracePeriod: 120
       HealthCheckType: EC2
       LaunchConfigurationName: !Ref LaunchConfiguration
-      MaxSize: 1
-      MinSize: 0
-      DesiredCapacity: 1
+      MaxSize: '1'
+      MinSize: '0'
+      DesiredCapacity: '1'
       Tags:
         - Key: Name
           Value:
@@ -402,7 +396,7 @@ Resources:
     Properties:
       AdjustmentType: ChangeInCapacity
       AutoScalingGroupName: !Ref AutoScalingGroup
-      Cooldown: 60
+      Cooldown: '60'
       PolicyType: SimpleScaling
       ScalingAdjustment: 1
   LaunchConfiguration:
@@ -421,8 +415,6 @@ Resources:
                 FILE_SYSTEM_ID=$1
                 DATA_DIRECTORY=$2
                 GROWTH=$3
-                COPY_SYSTEM_ID=$4
-                WP_DIR=$5
 
                 if [ $# -lt 3 ]; then
                   echo "Invalid # of arguments. Require: file system id, data directory, file system growth (GiB) "
@@ -483,21 +475,6 @@ Resources:
                   fi
                 done
 
-                #Sync data from
-
-                if [[ ! -z $COPY_SYSTEM_ID ]];
-                  then
-                    sudo mkdir -p /$COPY_SYSTEM_ID
-                    sudo chown ec2-user:ec2-user /$COPY_SYSTEM_ID
-                    sudo mountpoint -q /$COPY_SYSTEM_ID || sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 $COPY_SYSTEM_ID.efs.$region.amazonaws.com:/ /$COPY_SYSTEM_ID
-                    COPY_SOURCE=/$COPY_SYSTEM_ID
-                    if [ -d "/$COPY_SOURCE/$WP_DIR" ]; then
-                      COPY_SOURCE=/$COPY_SYSTEM_ID/$WP_DIR #If the wordpress folder is there, ensure we get only the contents
-                    fi
-                    sudo mkdir -p /$FILE_SYSTEM_ID/$WP_DIR
-                    sudo rsync -r $COPY_SOURCE/* /$FILE_SYSTEM_ID/$WP_DIR/
-                fi
-
                 # set ASG to zero which terminates instance
                 aws autoscaling update-auto-scaling-group --auto-scaling-group-name $asg_name --desired-capacity 0 --region $region
 
@@ -542,10 +519,6 @@ Resources:
               !Ref ElasticFileSystem,
               ' throughput_data ',
               !Ref Growth,
-              ' ',
-              !Ref EfsCopyDataFrom,
-              ' ',
-              !Ref WPDirectory,
               "\n",
               '- /opt/aws/bin/cfn-signal -e $? --stack ',
               !Ref 'AWS::StackName',
@@ -650,7 +623,7 @@ Resources:
       State: ENABLED
       Targets:
         - Arn: !GetAtt EfsSizeMonitorFunction.Arn
-          Id: 1
+          Id: '1'
 
 Outputs:
   ElasticFileSystem:
