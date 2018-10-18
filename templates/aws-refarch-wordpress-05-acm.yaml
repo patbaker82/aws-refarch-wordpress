@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Creates R53 records and ACM Certificate.
+Description: Creates ACM Certificate and validates
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
@@ -56,25 +56,12 @@ Parameters:
     Type: String
     Default: ''
 Conditions:
-  SetupRoute53:
-    'Fn::And':
-      - 'Fn::Not':
-          - 'Fn::Equals':
-              - Ref: HostedZoneID
-              - ''
-      - 'Fn::Not':
-          - 'Fn::Equals':
-              - Ref: DomainName
-              - ''
-  UseEmailForACMValidation:
-    'Fn::And':
-      - 'Fn::Equals':
-          - Ref: HostedZoneID
-          - ''
-      - 'Fn::Not':
-          - 'Fn::Equals':
-              - Ref: DomainName
-              - ''
+  SetupRoute53: !And
+    - !Not [!Equals [!Ref HostedZoneID, '']]
+    - !Not [!Equals [!Ref DomainName, '']]
+  UseEmailForACMValidation: !And
+    - !Equals [!Ref HostedZoneID, '']
+    - !Not [!Equals [!Ref DomainName, '']]
 Resources:
   ACMCertificateRole:
     Condition: SetupRoute53
@@ -111,7 +98,7 @@ Resources:
                 Action:
                   - 'route53:ChangeResourceRecordSets'
                 Resource:
-                  - 'Fn::Sub': 'arn:aws:route53:::hostedzone/${HostedZoneID}'
+                  - !Sub 'arn:aws:route53:::hostedzone/${HostedZoneID}'
               - Effect: Allow
                 Action:
                   - 'logs:FilterLogEvents'
@@ -124,43 +111,29 @@ Resources:
       Description: Creates and verifies an ACM certificate using DNS validation and route53
       Handler: lambda_function.handler
       Runtime: python2.7
-      Role:
-        'Fn::GetAtt':
-          - ACMCertificateRole
-          - Arn
+      Role: !GetAtt [ACMCertificateRole, Arn]
       Timeout: 300
       Code:
         S3Bucket:
           Ref: LambdaZipsBucketName
-        S3Key:
-          'Fn::Sub': '${QSS3KeyPrefix}functions/packages/ACMCert/lambda.zip'
+        S3Key: !Sub '${QSS3KeyPrefix}functions/packages/ACMCert/lambda.zip'
   ACMCertificateDNS:
     Condition: SetupRoute53
     Type: 'AWS::CloudFormation::CustomResource'
     Properties:
-      ServiceToken:
-        'Fn::GetAtt':
-          - ACMCertificateLambda
-          - Arn
+      ServiceToken: !GetAtt [ACMCertificateLambda, Arn]
       HostedZoneId:
         Ref: HostedZoneID
       HostNames:
-        - Ref: DomainName
-        - 'Fn::Join':
-            - ''
-            - - '*.'
-              - Ref: DomainName
+        - !Ref DomainName
+        - !Join ['', ['*.', !Ref DomainName]]
   ACMCertificateEmail:
     Condition: UseEmailForACMValidation
     Type: 'AWS::CertificateManager::Certificate'
     Properties:
       DomainName:
         Ref: DomainName
-      SubjectAlternativeNames:
-        - 'Fn::Join':
-            - ''
-            - - '*.'
-              - Ref: DomainName
+      SubjectAlternativeNames: !Join ['', ['*.', !Ref DomainName]]
       DomainValidationOptions:
         - DomainName:
             Ref: DomainName
@@ -170,10 +143,7 @@ Outputs:
   ACMCertificate:
     Condition: SetupRoute53
     Description: ARN of the ACM-Generated SSL Certificate
-    Value:
-      'Fn::If':
-        - SetupRoute53
-        - 'Fn::GetAtt':
-            - ACMCertificateDNS
-            - Arn
-        - Ref: ACMCertificateEmail
+    Value: !If
+      - SetupRoute53
+      - !GetAtt [ACMCertificateDNS, Arn]
+      - !Ref ACMCertificateEmail
