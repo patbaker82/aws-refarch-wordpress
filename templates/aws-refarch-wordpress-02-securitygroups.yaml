@@ -1,14 +1,13 @@
----
 AWSTemplateFormatVersion: 2010-09-09
 
 Description: Reference Architecture to host WordPress on AWS - Creates VPC security groups
 
 Metadata:
-
   Authors:
     Description: Darryl Osborne (darrylo@amazon.com)
   License:
-    Description: 'Copyright 2018 Amazon.com, Inc. and its affiliates. All Rights Reserved.
+    Description:
+      'Copyright 2018 Amazon.com, Inc. and its affiliates. All Rights Reserved.
       Licensed under the Amazon Software License (the "License"). You may not use this file
       except in compliance with the License. A copy of the License is located at
       http://aws.amazon.com/asl/
@@ -18,11 +17,11 @@ Metadata:
 
   AWS::CloudFormation::Interface:
     ParameterGroups:
-    - Label:
-        default: AWS Parameters
-      Parameters:
-        - SshAccessCidr
-        - Vpc
+      - Label:
+          default: AWS Parameters
+        Parameters:
+          - SshAccessCidr
+          - Vpc
     ParameterLabels:
       SshAccessCidr:
         default: SSH Access From
@@ -30,7 +29,6 @@ Metadata:
         default: Vpc Id
 
 Parameters:
-  
   SshAccessCidr:
     AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
     Description: The CIDR IP range that is permitted to SSH to bastion instance. Note - a value of 0.0.0.0/0 will allow access from ANY IP address.
@@ -42,7 +40,6 @@ Parameters:
     Type: AWS::EC2::VPC::Id
 
 Resources:
-
   BastionSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -52,8 +49,7 @@ Resources:
           FromPort: 22
           ToPort: 22
           CidrIp: !Ref SshAccessCidr
-      VpcId:
-        !Ref Vpc
+      VpcId: !Ref Vpc
 
   DatabaseSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -64,8 +60,7 @@ Resources:
           FromPort: 3306
           ToPort: 3306
           SourceSecurityGroupId: !Ref WebSecurityGroup
-      VpcId:
-        !Ref Vpc
+      VpcId: !Ref Vpc
 
   ElastiCacheSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -76,8 +71,7 @@ Resources:
           FromPort: 11211
           ToPort: 11211
           SourceSecurityGroupId: !Ref WebSecurityGroup
-      VpcId:
-        !Ref Vpc
+      VpcId: !Ref Vpc
   EfsSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -114,8 +108,7 @@ Resources:
           FromPort: 80
           ToPort: 80
           CidrIp: 0.0.0.0/0
-      VpcId:
-        !Ref Vpc       
+      VpcId: !Ref Vpc
 
   WebSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -134,8 +127,7 @@ Resources:
           FromPort: 22
           ToPort: 22
           SourceSecurityGroupId: !Ref BastionSecurityGroup
-      VpcId:
-        !Ref Vpc
+      VpcId: !Ref Vpc
 
 Outputs:
   BastionSecurityGroup:

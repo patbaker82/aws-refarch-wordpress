@@ -1,14 +1,13 @@
----
 AWSTemplateFormatVersion: 2010-09-09
 
 Description: Reference Architecture to host WordPress on AWS - Creates EFS file system
 
 Metadata:
-
   Authors:
     Description: Darryl Osborne (darrylo@amazon.com)
   License:
-    Description: 'Copyright 2018 Amazon.com, Inc. and its affiliates. All Rights Reserved.
+    Description:
+      'Copyright 2018 Amazon.com, Inc. and its affiliates. All Rights Reserved.
       Licensed under the Amazon Software License (the "License"). You may not use this file
       except in compliance with the License. A copy of the License is located at
       http://aws.amazon.com/asl/
@@ -17,20 +16,19 @@ Metadata:
       License for the specific language governing permissions and limitations under the License.'
 
   AWS::CloudFormation::Interface:
-
     ParameterGroups:
-    - Label:
-        default: Amazon EFS Parameters
-      Parameters:
-        - Growth
-        - InstanceType
-        - EC2KeyName
-        - PerformanceMode
-        - EncrpytedBoolean
-        - Cmk
-        - SecurityGroup
-        - NumberOfSubnets
-        - Subnet
+      - Label:
+          default: Amazon EFS Parameters
+        Parameters:
+          - Growth
+          - InstanceType
+          - EC2KeyName
+          - PerformanceMode
+          - EncrpytedBoolean
+          - Cmk
+          - SecurityGroup
+          - NumberOfSubnets
+          - Subnet
     ParameterLabels:
       EncrpytedBoolean:
         default: Encryption state
@@ -52,7 +50,6 @@ Metadata:
         default: Subnets
 
 Parameters:
-
   EncrpytedBoolean:
     AllowedValues:
       - True
@@ -66,7 +63,7 @@ Parameters:
   Growth:
     ConstraintDescription: Must be an integer.
     Default: 0
-    Description: Amount of dummy data (GiB) to add to the file system (max 6144 GiB). Amazon EFS storage charges apply. 
+    Description: Amount of dummy data (GiB) to add to the file system (max 6144 GiB). Amazon EFS storage charges apply.
     MaxValue: 6144
     MinValue: 0
     Type: Number
@@ -144,14 +141,14 @@ Parameters:
     Type: AWS::EC2::KeyPair::KeyName
   NumberOfSubnets:
     AllowedValues:
-    - 2
-    - 3
-    - 4
-    - 5
-    - 6
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
     Default: 3
     Description: Number of subnets. This must match your selections in the list of Subnets below.
-    Type: String 
+    Type: String
   PerformanceMode:
     AllowedValues:
       - generalPurpose
@@ -167,25 +164,18 @@ Parameters:
     Type: String
   SecurityGroup:
     Description: Select the Amazon EFS security group.
-    Type: AWS::EC2::SecurityGroup::Id   
+    Type: AWS::EC2::SecurityGroup::Id
   Subnet:
     Description: Select existing subnets.
     Type: List<AWS::EC2::Subnet::Id>
 
 Conditions:
-  
-  NumberOfSubnets1:
-      !Equals [ 1, !Ref NumberOfSubnets ]
-  NumberOfSubnets2:
-      !Equals [ 2, !Ref NumberOfSubnets ]
-  NumberOfSubnets3:
-      !Equals [ 3, !Ref NumberOfSubnets ]
-  NumberOfSubnets4:
-      !Equals [ 4, !Ref NumberOfSubnets ]
-  NumberOfSubnets5:
-      !Equals [ 5, !Ref NumberOfSubnets ]
-  NumberOfSubnets6:
-      !Equals [ 6, !Ref NumberOfSubnets ]
+  NumberOfSubnets1: !Equals [1, !Ref NumberOfSubnets]
+  NumberOfSubnets2: !Equals [2, !Ref NumberOfSubnets]
+  NumberOfSubnets3: !Equals [3, !Ref NumberOfSubnets]
+  NumberOfSubnets4: !Equals [4, !Ref NumberOfSubnets]
+  NumberOfSubnets5: !Equals [5, !Ref NumberOfSubnets]
+  NumberOfSubnets6: !Equals [6, !Ref NumberOfSubnets]
   Subnet0: !Or
     - !Condition NumberOfSubnets1
     - !Condition NumberOfSubnets2
@@ -211,12 +201,10 @@ Conditions:
   Subnet4: !Or
     - !Condition NumberOfSubnets5
     - !Condition NumberOfSubnets6
-  Subnet5: !Condition NumberOfSubnets6  
-  UseAWS-ManagedCMK:
-    !Equals ['', !Ref Cmk]
+  Subnet5: !Condition NumberOfSubnets6
+  UseAWS-ManagedCMK: !Equals ['', !Ref Cmk]
 
 Mappings:
-
   RegionMap:
     ap-northeast-1:
       AMI: ami-2a69be4c
@@ -248,16 +236,14 @@ Mappings:
       AMI: ami-e689729e
 
 Resources:
-
   ElasticFileSystem:
     Type: AWS::EFS::FileSystem
     Properties:
       Encrypted: !Ref EncrpytedBoolean
-      KmsKeyId:
-        !If [ UseAWS-ManagedCMK, !Ref 'AWS::NoValue', !Ref Cmk ]
+      KmsKeyId: !If [UseAWS-ManagedCMK, !Ref 'AWS::NoValue', !Ref Cmk]
       FileSystemTags:
         - Key: Name
-          Value: !Join [ '', [ 'WordPress / ', !Ref 'AWS::StackName' ] ]
+          Value: !Join ['', ['WordPress / ', !Ref 'AWS::StackName']]
       PerformanceMode: !Ref PerformanceMode
   ElasticFileSystemMountTarget0:
     Condition: Subnet0
@@ -265,79 +251,79 @@ Resources:
     Properties:
       FileSystemId: !Ref ElasticFileSystem
       SecurityGroups:
-      - !Ref SecurityGroup
-      SubnetId: !Select [ 0, !Ref Subnet ]
+        - !Ref SecurityGroup
+      SubnetId: !Select [0, !Ref Subnet]
   ElasticFileSystemMountTarget1:
     Condition: Subnet1
     Type: AWS::EFS::MountTarget
     Properties:
       FileSystemId: !Ref ElasticFileSystem
       SecurityGroups:
-      - !Ref SecurityGroup
-      SubnetId: !Select [ 1, !Ref Subnet ]
+        - !Ref SecurityGroup
+      SubnetId: !Select [1, !Ref Subnet]
   ElasticFileSystemMountTarget2:
     Condition: Subnet2
     Type: AWS::EFS::MountTarget
     Properties:
       FileSystemId: !Ref ElasticFileSystem
       SecurityGroups:
-      - !Ref SecurityGroup
-      SubnetId: !Select [ 2, !Ref Subnet ]
+        - !Ref SecurityGroup
+      SubnetId: !Select [2, !Ref Subnet]
   ElasticFileSystemMountTarget3:
     Condition: Subnet3
     Type: AWS::EFS::MountTarget
     Properties:
       FileSystemId: !Ref ElasticFileSystem
       SecurityGroups:
-      - !Ref SecurityGroup
-      SubnetId: !Select [ 3, !Ref Subnet ]
+        - !Ref SecurityGroup
+      SubnetId: !Select [3, !Ref Subnet]
   ElasticFileSystemMountTarget4:
     Condition: Subnet4
     Type: AWS::EFS::MountTarget
     Properties:
       FileSystemId: !Ref ElasticFileSystem
       SecurityGroups:
-      - !Ref SecurityGroup
-      SubnetId: !Select [ 4, !Ref Subnet ]
+        - !Ref SecurityGroup
+      SubnetId: !Select [4, !Ref Subnet]
   ElasticFileSystemMountTarget5:
     Condition: Subnet5
     Type: AWS::EFS::MountTarget
     Properties:
       FileSystemId: !Ref ElasticFileSystem
       SecurityGroups:
-      - !Ref SecurityGroup
-      SubnetId: !Select [ 5, !Ref Subnet ]
+        - !Ref SecurityGroup
+      SubnetId: !Select [5, !Ref Subnet]
   InstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Path: /
       Roles:
-      - !Ref InstanceRole
+        - !Ref InstanceRole
   InstanceRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - ec2.amazonaws.com
-          Action:
-          - sts:AssumeRole
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
       Path: /
       Policies:
-      - PolicyName: efs-create-file-system-with-storage
-        PolicyDocument:
-          Version: 2012-10-17
-          Statement:
-          - Effect: Allow
-            Action:
-              - autoscaling:DescribeAutoScalingGroups
-              - autoscaling:DescribeAutoScalingInstances
-              - autoscaling:DescribePolicies
-              - autoscaling:UpdateAutoScalingGroup
-            Resource: '*'
+        - PolicyName: efs-create-file-system-with-storage
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - autoscaling:DescribeAutoScalingGroups
+                  - autoscaling:DescribeAutoScalingInstances
+                  - autoscaling:DescribePolicies
+                  - autoscaling:UpdateAutoScalingGroup
+                Resource: '*'
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
@@ -350,30 +336,60 @@ Resources:
       DesiredCapacity: 1
       Tags:
         - Key: Name
-          Value: !Join [ '', [ 'EFS ', !Ref ElasticFileSystem, ' data load... will auto terminate.' ] ]
+          Value:
+            !Join [
+              '',
+              [
+                'EFS ',
+                !Ref ElasticFileSystem,
+                ' data load... will auto terminate.',
+              ],
+            ]
           PropagateAtLaunch: true
       VPCZoneIdentifier:
-        !If
-          [ NumberOfSubnets1,
-          [ !Select [ 0, !Ref Subnet ] ],
-          !If
-            [ NumberOfSubnets2,
-            [ !Select [ 0, !Ref Subnet ], !Select [ 1, !Ref Subnet ] ],
-            !If
-              [ NumberOfSubnets3,
-              [ !Select [ 0, !Ref Subnet ], !Select [ 1, !Ref Subnet ], !Select [ 2, !Ref Subnet ] ],
-              !If
-                [ NumberOfSubnets4,
-                [ !Select [ 0, !Ref Subnet ], !Select [ 1, !Ref Subnet ], !Select [ 2, !Ref Subnet ], !Select [ 3, !Ref Subnet ] ],
-                !If
-                  [ NumberOfSubnets5,
-                  [ !Select [ 0, !Ref Subnet ], !Select [ 1, !Ref Subnet ], !Select [ 2, !Ref Subnet ], !Select [ 3, !Ref Subnet ], !Select [ 4, !Ref Subnet ] ],
-                  [ !Select [ 0, !Ref Subnet ], !Select [ 1, !Ref Subnet ], !Select [ 2, !Ref Subnet ], !Select [ 3, !Ref Subnet ], !Select [ 4, !Ref Subnet ], !Select [ 5, !Ref Subnet ] ]
-                  ]
-                ]
-              ]
-            ]
-          ]
+        !If [
+          NumberOfSubnets1,
+          [!Select [0, !Ref Subnet]],
+          !If [
+            NumberOfSubnets2,
+            [!Select [0, !Ref Subnet], !Select [1, !Ref Subnet]],
+            !If [
+              NumberOfSubnets3,
+              [
+                !Select [0, !Ref Subnet],
+                !Select [1, !Ref Subnet],
+                !Select [2, !Ref Subnet],
+              ],
+              !If [
+                NumberOfSubnets4,
+                [
+                  !Select [0, !Ref Subnet],
+                  !Select [1, !Ref Subnet],
+                  !Select [2, !Ref Subnet],
+                  !Select [3, !Ref Subnet],
+                ],
+                !If [
+                  NumberOfSubnets5,
+                  [
+                    !Select [0, !Ref Subnet],
+                    !Select [1, !Ref Subnet],
+                    !Select [2, !Ref Subnet],
+                    !Select [3, !Ref Subnet],
+                    !Select [4, !Ref Subnet],
+                  ],
+                  [
+                    !Select [0, !Ref Subnet],
+                    !Select [1, !Ref Subnet],
+                    !Select [2, !Ref Subnet],
+                    !Select [3, !Ref Subnet],
+                    !Select [4, !Ref Subnet],
+                    !Select [5, !Ref Subnet],
+                  ],
+                ],
+              ],
+            ],
+          ],
+        ]
     CreationPolicy:
       ResourceSignal:
         Count: 0
@@ -397,7 +413,7 @@ Resources:
           efs_add_storage:
             - efs-add-storage
         efs-add-storage:
-          files:              
+          files:
             /tmp/efs-add-storage.sh:
               content: !Sub |
                 #!/bin/bash -x
@@ -467,8 +483,8 @@ Resources:
                   fi
                 done
 
-                #Sync data from 
-                
+                #Sync data from
+
                 if [[ ! -z $COPY_SYSTEM_ID ]];
                   then
                     sudo mkdir -p /$COPY_SYSTEM_ID
@@ -496,34 +512,51 @@ Resources:
             VolumeSize: 10
             VolumeType: gp2
       IamInstanceProfile: !Ref InstanceProfile
-      ImageId: !FindInMap [ RegionMap, !Ref 'AWS::Region', AMI ]
+      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
       InstanceMonitoring: true
       InstanceType: !Ref InstanceType
       KeyName: !Ref EC2KeyName
       SecurityGroups:
-      - !Ref SecurityGroup
+        - !Ref SecurityGroup
       UserData:
-        "Fn::Base64":
+        'Fn::Base64':
           !Join [
-            "",[
-            "#cloud-config\n",
-            "repo_update: true\n",
-            "repo_upgrade: all\n",
-            "\n",
-            "packages:\n",
-            "- parallel\n",
-            "\n",
-            "runcmd:\n",
-            "- yum --enablerepo=epel install nload -y\n",
-            "- ntpstat\n",
-            "- /opt/aws/bin/cfn-init --configsets efs_add_storage --verbose --stack ", !Ref 'AWS::StackName', " --resource LaunchConfiguration --region ", !Ref 'AWS::Region',"\n",
-            "- /tmp/efs-add-storage.sh ", !Ref ElasticFileSystem, " throughput_data ", !Ref Growth, " ", !Ref EfsCopyDataFrom, " ", !Ref WPDirectory, "\n",
-            "- /opt/aws/bin/cfn-signal -e $? --stack ", !Ref 'AWS::StackName', " --resource AutoScalingGroup --region ", !Ref 'AWS::Region',"\n"
-            ]
+            '',
+            [
+              "#cloud-config\n",
+              "repo_update: true\n",
+              "repo_upgrade: all\n",
+              "\n",
+              "packages:\n",
+              "- parallel\n",
+              "\n",
+              "runcmd:\n",
+              "- yum --enablerepo=epel install nload -y\n",
+              "- ntpstat\n",
+              '- /opt/aws/bin/cfn-init --configsets efs_add_storage --verbose --stack ',
+              !Ref 'AWS::StackName',
+              ' --resource LaunchConfiguration --region ',
+              !Ref 'AWS::Region',
+              "\n",
+              '- /tmp/efs-add-storage.sh ',
+              !Ref ElasticFileSystem,
+              ' throughput_data ',
+              !Ref Growth,
+              ' ',
+              !Ref EfsCopyDataFrom,
+              ' ',
+              !Ref WPDirectory,
+              "\n",
+              '- /opt/aws/bin/cfn-signal -e $? --stack ',
+              !Ref 'AWS::StackName',
+              ' --resource AutoScalingGroup --region ',
+              !Ref 'AWS::Region',
+              "\n",
+            ],
           ]
   EfsSizeMonitorFunction:
     Type: AWS::Lambda::Function
-    Properties: 
+    Properties:
       Code:
         ZipFile: !Sub |
           import boto3
@@ -575,7 +608,8 @@ Resources:
         Variables:
           filesystemid: !Ref ElasticFileSystem
           region: !Ref 'AWS::Region'
-      FunctionName: !Join [ '', [ 'efs-', !Ref ElasticFileSystem, '-size-monitor' ] ]
+      FunctionName:
+        !Join ['', ['efs-', !Ref ElasticFileSystem, '-size-monitor']]
       Handler: index.handler
       Role: !GetAtt LambdaRole.Arn
       Runtime: python2.7
@@ -586,28 +620,32 @@ Resources:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - lambda.amazonaws.com
-          Action:
-          - sts:AssumeRole
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
       Path: /
       ManagedPolicyArns:
-      - arn:aws:iam::aws:policy/CloudWatchFullAccess
-      - arn:aws:iam::aws:policy/AmazonElasticFileSystemReadOnlyAccess
-  EfsLambdaPermission: 
+        - arn:aws:iam::aws:policy/CloudWatchFullAccess
+        - arn:aws:iam::aws:policy/AmazonElasticFileSystemReadOnlyAccess
+  EfsLambdaPermission:
     Type: AWS::Lambda::Permission
-    Properties: 
+    Properties:
       FunctionName: !Ref EfsSizeMonitorFunction
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
       SourceArn: !GetAtt EfsSizeMonitorEvent.Arn
   EfsSizeMonitorEvent:
     Type: AWS::Events::Rule
-    Properties: 
+    Properties:
       Description: Scheduled event to update SizeInBytes EFS CloudWatch metric
-      Name: !Join [ '', [ 'efs-', !Ref ElasticFileSystem, '-size-monitor-scheduled-event' ] ]
+      Name:
+        !Join [
+          '',
+          ['efs-', !Ref ElasticFileSystem, '-size-monitor-scheduled-event'],
+        ]
       ScheduleExpression: rate(1 minute)
       State: ENABLED
       Targets:
@@ -619,7 +657,29 @@ Outputs:
     Value: !Ref ElasticFileSystem
   ElasticFileSystemDnsName:
     Description: DNS name for the Amazon EFS file system.
-    Value: !Join [ '.', [ !Ref ElasticFileSystem, 'efs', !Ref 'AWS::Region', 'amazonaws', 'com' ] ]
+    Value:
+      !Join [
+        '.',
+        [!Ref ElasticFileSystem, 'efs', !Ref 'AWS::Region', 'amazonaws', 'com'],
+      ]
   ElasticFileSystemMountCommand:
     Description: Mount command for mounting the Amazon EFS file system.
-    Value: !Join [ '', [ 'sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ', !Join [ '.', [ !Ref ElasticFileSystem, 'efs', !Ref 'AWS::Region', 'amazonaws', 'com:/', '/', !Ref ElasticFileSystem ] ] ] ]
+    Value:
+      !Join [
+        '',
+        [
+          'sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ',
+          !Join [
+            '.',
+            [
+              !Ref ElasticFileSystem,
+              'efs',
+              !Ref 'AWS::Region',
+              'amazonaws',
+              'com:/',
+              '/',
+              !Ref ElasticFileSystem,
+            ],
+          ],
+        ],
+      ]

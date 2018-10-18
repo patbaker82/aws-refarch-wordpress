@@ -1,14 +1,13 @@
----
 AWSTemplateFormatVersion: 2010-09-09
 
 Description: Stack to deploy a highly available, elastic, scalable WordPress environment. This master stack launches multiple nested stacks for different tiers. !! This can only be run in certain AWS Regions - 'us-east-1', 'us-east-2', 'us-west-2', 'eu-west-1'.
 
 Metadata:
-
   Authors:
     Description: Darryl Osborne (darrylo@amazon.com)
   License:
-    Description: 'Copyright 2018 Amazon.com, Inc. and its affiliates. All Rights Reserved.
+    Description:
+      'Copyright 2018 Amazon.com, Inc. and its affiliates. All Rights Reserved.
       Licensed under the Amazon Software License (the "License"). You may not use this file
       except in compliance with the License. A copy of the License is located at
       http://aws.amazon.com/asl/
@@ -18,93 +17,93 @@ Metadata:
 
   AWS::CloudFormation::Interface:
     ParameterGroups:
-    - Label:
-        default: General AWS
-      Parameters:
-        - EC2KeyName
-        - SshAccessCidr
-        - AdminEmail
-        - WPDomainName
-        - UseRoute53Boolean
-        - UseCloudFrontBoolean
-        - CloudFrontAcmCertificate
-    - Label:
-        default: Network
-      Parameters:
-        - NumberOfAZs
-        - AvailabilityZones
-        - VpcCidr
-        - VpcTenancy
-        - PublicSubnet0Cidr
-        - PublicSubnet1Cidr
-        - PublicSubnet2Cidr
-        - PublicSubnet3Cidr
-        - PublicSubnet4Cidr
-        - PublicSubnet5Cidr
-        - WebSubnet0Cidr
-        - WebSubnet1Cidr
-        - WebSubnet2Cidr
-        - WebSubnet3Cidr
-        - WebSubnet4Cidr
-        - WebSubnet5Cidr
-        - DataSubnet0Cidr
-        - DataSubnet1Cidr
-        - DataSubnet2Cidr
-        - DataSubnet3Cidr
-        - DataSubnet4Cidr
-        - DataSubnet5Cidr
-    - Label:
-        default: File System Tier
-      Parameters:
-        - EfsPerformanceMode
-        - EfsEncrpytedBoolean
-        - EfsCmk
-        - EfsGrowth
-        - EfsGrowthInstanceType
-        - EfsCreateAlarms
-        - EfsAlarmsInstanceType
-        - EfsWarningThreshold
-        - EfsCriticalThreshold
-    - Label:
-        default: Database Tier
-      Parameters:
-        - DatabaseInstanceType
-        - DatabaseEncrpytedBoolean
-        - DatabaseCmk
-        - DatabaseMasterUsername
-        - DatabaseMasterPassword
-        - DatabaseName
-        - UseElastiCacheBoolean
-        - ElastiCacheNodeType
-    - Label:
-        default: Bastion Tier
-      Parameters:
-        - BastionInstanceType
-    - Label:
-        default: Web Tier
-      Parameters:
-        - PublicAlbAcmCertificate
-        - PHPVersion
-        - PHPIniOverride
-        - WebInstanceType
-        - WebAsgMax
-        - WebAsgMin
-    - Label:
-        default: WordPress
-      Parameters:
-        - WPVersion
-        - WPTitle
-        - WPAdminUsername
-        - WPAdminPassword
-        - WPDirectory
-        - WPLocale
+      - Label:
+          default: General AWS
+        Parameters:
+          - EC2KeyName
+          - SshAccessCidr
+          - AdminEmail
+          - WPDomainName
+          - UseRoute53Boolean
+          - UseCloudFrontBoolean
+          - CloudFrontAcmCertificate
+      - Label:
+          default: Network
+        Parameters:
+          - NumberOfAZs
+          - AvailabilityZones
+          - VpcCidr
+          - VpcTenancy
+          - PublicSubnet0Cidr
+          - PublicSubnet1Cidr
+          - PublicSubnet2Cidr
+          - PublicSubnet3Cidr
+          - PublicSubnet4Cidr
+          - PublicSubnet5Cidr
+          - WebSubnet0Cidr
+          - WebSubnet1Cidr
+          - WebSubnet2Cidr
+          - WebSubnet3Cidr
+          - WebSubnet4Cidr
+          - WebSubnet5Cidr
+          - DataSubnet0Cidr
+          - DataSubnet1Cidr
+          - DataSubnet2Cidr
+          - DataSubnet3Cidr
+          - DataSubnet4Cidr
+          - DataSubnet5Cidr
+      - Label:
+          default: File System Tier
+        Parameters:
+          - EfsPerformanceMode
+          - EfsEncrpytedBoolean
+          - EfsCmk
+          - EfsGrowth
+          - EfsGrowthInstanceType
+          - EfsCreateAlarms
+          - EfsAlarmsInstanceType
+          - EfsWarningThreshold
+          - EfsCriticalThreshold
+      - Label:
+          default: Database Tier
+        Parameters:
+          - DatabaseInstanceType
+          - DatabaseEncrpytedBoolean
+          - DatabaseCmk
+          - DatabaseMasterUsername
+          - DatabaseMasterPassword
+          - DatabaseName
+          - UseElastiCacheBoolean
+          - ElastiCacheNodeType
+      - Label:
+          default: Bastion Tier
+        Parameters:
+          - BastionInstanceType
+      - Label:
+          default: Web Tier
+        Parameters:
+          - PublicAlbAcmCertificate
+          - PHPVersion
+          - PHPIniOverride
+          - WebInstanceType
+          - WebAsgMax
+          - WebAsgMin
+      - Label:
+          default: WordPress
+        Parameters:
+          - WPVersion
+          - WPTitle
+          - WPAdminUsername
+          - WPAdminPassword
+          - WPDirectory
+          - WPLocale
     ParameterLabels:
       BastionInstanceType:
         default: Bastion Instance Type
       CloudFrontAcmCertificate:
         default: CloudFront Certificate ARN
       DatabaseCmk:
-        default: AWS KMS CMK for RDS 
+        default: AWS KMS CMK for RDS
       DatabaseEncrpytedBoolean:
         default: Encrypted DB Cluster
       DatabaseInstanceType:
@@ -219,98 +218,97 @@ Metadata:
         default: Data Subnet 5
 
 Parameters:
-
   BastionInstanceType:
     AllowedValues:
-    - t2.nano 
-    - t2.micro 
-    - t2.small 
-    - t2.medium 
-    - t2.large 
-    - t2.xlarge 
-    - t2.2xlarge 
-    - m3.medium 
-    - m3.large 
-    - m3.xlarge 
-    - m3.2xlarge 
-    - m4.large 
-    - m4.xlarge 
-    - m4.2xlarge 
-    - m4.4xlarge 
-    - m4.10xlarge 
-    - m4.16xlarge 
-    - m5.large 
-    - m5.xlarge 
-    - m5.2xlarge 
-    - m5.4xlarge 
-    - m5.12xlarge 
-    - m5.24xlarge 
-    - c3.large 
-    - c3.xlarge 
-    - c3.2xlarge 
-    - c3.4xlarge 
-    - c3.8xlarge 
-    - c4.large 
-    - c4.xlarge 
-    - c4.2xlarge 
-    - c4.4xlarge 
-    - c4.8xlarge 
-    - c5.large 
-    - c5.xlarge 
-    - c5.2xlarge 
-    - c5.4xlarge 
-    - c5.9xlarge 
-    - c5.18xlarge
-    - r3.large 
-    - r3.xlarge 
-    - r3.2xlarge 
-    - r3.4xlarge 
-    - r3.8xlarge 
-    - r4.large 
-    - r4.xlarge 
-    - r4.2xlarge 
-    - r4.4xlarge 
-    - r4.8xlarge 
-    - r4.16xlarge 
-    - x1.16xlarge 
-    - x1.32xlarge 
-    - x1e.xlarge 
-    - x1e.2xlarge 
-    - x1e.4xlarge 
-    - x1e.8xlarge 
-    - x1e.16xlarge 
-    - x1e.32xlarge
-    - d2.xlarge 
-    - d2.2xlarge 
-    - d2.4xlarge 
-    - d2.8xlarge 
-    - h1.2xlarge 
-    - h1.4xlarge 
-    - h1.8xlarge 
-    - h1.16xlarge 
-    - i2.xlarge 
-    - i2.2xlarge 
-    - i2.4xlarge 
-    - i2.8xlarge 
-    - i3.large 
-    - i3.xlarge 
-    - i3.2xlarge 
-    - i3.4xlarge 
-    - i3.8xlarge 
-    - i3.16xlarge
-    - f1.2xlarge 
-    - f1.16xlarge 
-    - g2.2xlarge 
-    - g2.8xlarge 
-    - g3.4xlarge 
-    - g3.8xlarge 
-    - g3.16xlarge 
-    - p2.xlarge 
-    - p2.8xlarge 
-    - p2.16xlarge 
-    - p3.2xlarge 
-    - p3.8xlarge 
-    - p3.16xlarge
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t2.xlarge
+      - t2.2xlarge
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m4.10xlarge
+      - m4.16xlarge
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - m5.12xlarge
+      - m5.24xlarge
+      - c3.large
+      - c3.xlarge
+      - c3.2xlarge
+      - c3.4xlarge
+      - c3.8xlarge
+      - c4.large
+      - c4.xlarge
+      - c4.2xlarge
+      - c4.4xlarge
+      - c4.8xlarge
+      - c5.large
+      - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+      - c5.9xlarge
+      - c5.18xlarge
+      - r3.large
+      - r3.xlarge
+      - r3.2xlarge
+      - r3.4xlarge
+      - r3.8xlarge
+      - r4.large
+      - r4.xlarge
+      - r4.2xlarge
+      - r4.4xlarge
+      - r4.8xlarge
+      - r4.16xlarge
+      - x1.16xlarge
+      - x1.32xlarge
+      - x1e.xlarge
+      - x1e.2xlarge
+      - x1e.4xlarge
+      - x1e.8xlarge
+      - x1e.16xlarge
+      - x1e.32xlarge
+      - d2.xlarge
+      - d2.2xlarge
+      - d2.4xlarge
+      - d2.8xlarge
+      - h1.2xlarge
+      - h1.4xlarge
+      - h1.8xlarge
+      - h1.16xlarge
+      - i2.xlarge
+      - i2.2xlarge
+      - i2.4xlarge
+      - i2.8xlarge
+      - i3.large
+      - i3.xlarge
+      - i3.2xlarge
+      - i3.4xlarge
+      - i3.8xlarge
+      - i3.16xlarge
+      - f1.2xlarge
+      - f1.16xlarge
+      - g2.2xlarge
+      - g2.8xlarge
+      - g3.4xlarge
+      - g3.8xlarge
+      - g3.16xlarge
+      - p2.xlarge
+      - p2.8xlarge
+      - p2.16xlarge
+      - p3.2xlarge
+      - p3.8xlarge
+      - p3.16xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
     Default: t2.nano
     Description: Bastion EC2 instance type.
@@ -369,95 +367,95 @@ Parameters:
     Type: String
   EfsAlarmsInstanceType:
     AllowedValues:
-    - t2.nano 
-    - t2.micro 
-    - t2.small 
-    - t2.medium 
-    - t2.large 
-    - t2.xlarge 
-    - t2.2xlarge 
-    - m3.medium 
-    - m3.large 
-    - m3.xlarge 
-    - m3.2xlarge 
-    - m4.large 
-    - m4.xlarge 
-    - m4.2xlarge 
-    - m4.4xlarge 
-    - m4.10xlarge 
-    - m4.16xlarge 
-    - m5.large 
-    - m5.xlarge 
-    - m5.2xlarge 
-    - m5.4xlarge 
-    - m5.12xlarge 
-    - m5.24xlarge 
-    - c3.large 
-    - c3.xlarge 
-    - c3.2xlarge 
-    - c3.4xlarge 
-    - c3.8xlarge 
-    - c4.large 
-    - c4.xlarge 
-    - c4.2xlarge 
-    - c4.4xlarge 
-    - c4.8xlarge 
-    - c5.large 
-    - c5.xlarge 
-    - c5.2xlarge 
-    - c5.4xlarge 
-    - c5.9xlarge 
-    - c5.18xlarge
-    - r3.large 
-    - r3.xlarge 
-    - r3.2xlarge 
-    - r3.4xlarge 
-    - r3.8xlarge 
-    - r4.large 
-    - r4.xlarge 
-    - r4.2xlarge 
-    - r4.4xlarge 
-    - r4.8xlarge 
-    - r4.16xlarge 
-    - x1.16xlarge 
-    - x1.32xlarge 
-    - x1e.xlarge 
-    - x1e.2xlarge 
-    - x1e.4xlarge 
-    - x1e.8xlarge 
-    - x1e.16xlarge 
-    - x1e.32xlarge
-    - d2.xlarge 
-    - d2.2xlarge 
-    - d2.4xlarge 
-    - d2.8xlarge 
-    - h1.2xlarge 
-    - h1.4xlarge 
-    - h1.8xlarge 
-    - h1.16xlarge 
-    - i2.xlarge 
-    - i2.2xlarge 
-    - i2.4xlarge 
-    - i2.8xlarge 
-    - i3.large 
-    - i3.xlarge 
-    - i3.2xlarge 
-    - i3.4xlarge 
-    - i3.8xlarge 
-    - i3.16xlarge
-    - f1.2xlarge 
-    - f1.16xlarge 
-    - g2.2xlarge 
-    - g2.8xlarge 
-    - g3.4xlarge 
-    - g3.8xlarge 
-    - g3.16xlarge 
-    - p2.xlarge 
-    - p2.8xlarge 
-    - p2.16xlarge 
-    - p3.2xlarge 
-    - p3.8xlarge 
-    - p3.16xlarge
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t2.xlarge
+      - t2.2xlarge
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m4.10xlarge
+      - m4.16xlarge
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - m5.12xlarge
+      - m5.24xlarge
+      - c3.large
+      - c3.xlarge
+      - c3.2xlarge
+      - c3.4xlarge
+      - c3.8xlarge
+      - c4.large
+      - c4.xlarge
+      - c4.2xlarge
+      - c4.4xlarge
+      - c4.8xlarge
+      - c5.large
+      - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+      - c5.9xlarge
+      - c5.18xlarge
+      - r3.large
+      - r3.xlarge
+      - r3.2xlarge
+      - r3.4xlarge
+      - r3.8xlarge
+      - r4.large
+      - r4.xlarge
+      - r4.2xlarge
+      - r4.4xlarge
+      - r4.8xlarge
+      - r4.16xlarge
+      - x1.16xlarge
+      - x1.32xlarge
+      - x1e.xlarge
+      - x1e.2xlarge
+      - x1e.4xlarge
+      - x1e.8xlarge
+      - x1e.16xlarge
+      - x1e.32xlarge
+      - d2.xlarge
+      - d2.2xlarge
+      - d2.4xlarge
+      - d2.8xlarge
+      - h1.2xlarge
+      - h1.4xlarge
+      - h1.8xlarge
+      - h1.16xlarge
+      - i2.xlarge
+      - i2.2xlarge
+      - i2.4xlarge
+      - i2.8xlarge
+      - i3.large
+      - i3.xlarge
+      - i3.2xlarge
+      - i3.4xlarge
+      - i3.8xlarge
+      - i3.16xlarge
+      - f1.2xlarge
+      - f1.16xlarge
+      - g2.2xlarge
+      - g2.8xlarge
+      - g3.4xlarge
+      - g3.8xlarge
+      - g3.16xlarge
+      - p2.xlarge
+      - p2.8xlarge
+      - p2.16xlarge
+      - p3.2xlarge
+      - p3.8xlarge
+      - p3.16xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
     Default: t2.nano
     Description: The Amazon EC2 instance type that dynamically adjusts alarm thresholds based on permitted throughput changes.
@@ -496,95 +494,95 @@ Parameters:
     Type: Number
   EfsGrowthInstanceType:
     AllowedValues:
-    - t2.nano 
-    - t2.micro 
-    - t2.small 
-    - t2.medium 
-    - t2.large 
-    - t2.xlarge 
-    - t2.2xlarge 
-    - m3.medium 
-    - m3.large 
-    - m3.xlarge 
-    - m3.2xlarge 
-    - m4.large 
-    - m4.xlarge 
-    - m4.2xlarge 
-    - m4.4xlarge 
-    - m4.10xlarge 
-    - m4.16xlarge 
-    - m5.large 
-    - m5.xlarge 
-    - m5.2xlarge 
-    - m5.4xlarge 
-    - m5.12xlarge 
-    - m5.24xlarge 
-    - c3.large 
-    - c3.xlarge 
-    - c3.2xlarge 
-    - c3.4xlarge 
-    - c3.8xlarge 
-    - c4.large 
-    - c4.xlarge 
-    - c4.2xlarge 
-    - c4.4xlarge 
-    - c4.8xlarge 
-    - c5.large 
-    - c5.xlarge 
-    - c5.2xlarge 
-    - c5.4xlarge 
-    - c5.9xlarge 
-    - c5.18xlarge
-    - r3.large 
-    - r3.xlarge 
-    - r3.2xlarge 
-    - r3.4xlarge 
-    - r3.8xlarge 
-    - r4.large 
-    - r4.xlarge 
-    - r4.2xlarge 
-    - r4.4xlarge 
-    - r4.8xlarge 
-    - r4.16xlarge 
-    - x1.16xlarge 
-    - x1.32xlarge 
-    - x1e.xlarge 
-    - x1e.2xlarge 
-    - x1e.4xlarge 
-    - x1e.8xlarge 
-    - x1e.16xlarge 
-    - x1e.32xlarge
-    - d2.xlarge 
-    - d2.2xlarge 
-    - d2.4xlarge 
-    - d2.8xlarge 
-    - h1.2xlarge 
-    - h1.4xlarge 
-    - h1.8xlarge 
-    - h1.16xlarge 
-    - i2.xlarge 
-    - i2.2xlarge 
-    - i2.4xlarge 
-    - i2.8xlarge 
-    - i3.large 
-    - i3.xlarge 
-    - i3.2xlarge 
-    - i3.4xlarge 
-    - i3.8xlarge 
-    - i3.16xlarge
-    - f1.2xlarge 
-    - f1.16xlarge 
-    - g2.2xlarge 
-    - g2.8xlarge 
-    - g3.4xlarge 
-    - g3.8xlarge 
-    - g3.16xlarge 
-    - p2.xlarge 
-    - p2.8xlarge 
-    - p2.16xlarge 
-    - p3.2xlarge 
-    - p3.8xlarge 
-    - p3.16xlarge
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t2.xlarge
+      - t2.2xlarge
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m4.10xlarge
+      - m4.16xlarge
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - m5.12xlarge
+      - m5.24xlarge
+      - c3.large
+      - c3.xlarge
+      - c3.2xlarge
+      - c3.4xlarge
+      - c3.8xlarge
+      - c4.large
+      - c4.xlarge
+      - c4.2xlarge
+      - c4.4xlarge
+      - c4.8xlarge
+      - c5.large
+      - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+      - c5.9xlarge
+      - c5.18xlarge
+      - r3.large
+      - r3.xlarge
+      - r3.2xlarge
+      - r3.4xlarge
+      - r3.8xlarge
+      - r4.large
+      - r4.xlarge
+      - r4.2xlarge
+      - r4.4xlarge
+      - r4.8xlarge
+      - r4.16xlarge
+      - x1.16xlarge
+      - x1.32xlarge
+      - x1e.xlarge
+      - x1e.2xlarge
+      - x1e.4xlarge
+      - x1e.8xlarge
+      - x1e.16xlarge
+      - x1e.32xlarge
+      - d2.xlarge
+      - d2.2xlarge
+      - d2.4xlarge
+      - d2.8xlarge
+      - h1.2xlarge
+      - h1.4xlarge
+      - h1.8xlarge
+      - h1.16xlarge
+      - i2.xlarge
+      - i2.2xlarge
+      - i2.4xlarge
+      - i2.8xlarge
+      - i3.large
+      - i3.xlarge
+      - i3.2xlarge
+      - i3.4xlarge
+      - i3.8xlarge
+      - i3.16xlarge
+      - f1.2xlarge
+      - f1.16xlarge
+      - g2.2xlarge
+      - g2.8xlarge
+      - g3.4xlarge
+      - g3.8xlarge
+      - g3.16xlarge
+      - p2.xlarge
+      - p2.8xlarge
+      - p2.16xlarge
+      - p3.2xlarge
+      - p3.8xlarge
+      - p3.16xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
     Default: r4.large
     Description: The Amazon EC2 instance type that adds data to the file system.
@@ -634,12 +632,12 @@ Parameters:
     Type: String
   PHPVersion:
     AllowedValues:
-    - 5.5
-    - 5.6
-    - 7.0
+      - 5.5
+      - 5.6
+      - 7.0
     Default: 7.0
     Description: The version of PHP to install.
-    Type: String 
+    Type: String
   PublicAlbAcmCertificate:
     AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
     Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the WordPress domain name you use below.'
@@ -684,97 +682,104 @@ Parameters:
     Type: String
   WebInstanceType:
     AllowedValues:
-      - t2.nano 
-      - t2.micro 
-      - t2.small 
-      - t2.medium 
-      - t2.large 
-      - t2.xlarge 
-      - t2.2xlarge 
-      - m3.medium 
-      - m3.large 
-      - m3.xlarge 
-      - m3.2xlarge 
-      - m4.large 
-      - m4.xlarge 
-      - m4.2xlarge 
-      - m4.4xlarge 
-      - m4.10xlarge 
-      - m4.16xlarge 
-      - m5.large 
-      - m5.xlarge 
-      - m5.2xlarge 
-      - m5.4xlarge 
-      - m5.12xlarge 
-      - m5.24xlarge 
-      - c3.large 
-      - c3.xlarge 
-      - c3.2xlarge 
-      - c3.4xlarge 
-      - c3.8xlarge 
-      - c4.large 
-      - c4.xlarge 
-      - c4.2xlarge 
-      - c4.4xlarge 
-      - c4.8xlarge 
-      - c5.large 
-      - c5.xlarge 
-      - c5.2xlarge 
-      - c5.4xlarge 
-      - c5.9xlarge 
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t2.xlarge
+      - t2.2xlarge
+      - t3.nano
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+      - t3.xlarge
+      - t3.2xlarge
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m4.10xlarge
+      - m4.16xlarge
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - m5.12xlarge
+      - m5.24xlarge
+      - c3.large
+      - c3.xlarge
+      - c3.2xlarge
+      - c3.4xlarge
+      - c3.8xlarge
+      - c4.large
+      - c4.xlarge
+      - c4.2xlarge
+      - c4.4xlarge
+      - c4.8xlarge
+      - c5.large
+      - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+      - c5.9xlarge
       - c5.18xlarge
-      - r3.large 
-      - r3.xlarge 
-      - r3.2xlarge 
-      - r3.4xlarge 
-      - r3.8xlarge 
-      - r4.large 
-      - r4.xlarge 
-      - r4.2xlarge 
-      - r4.4xlarge 
-      - r4.8xlarge 
-      - r4.16xlarge 
-      - x1.16xlarge 
-      - x1.32xlarge 
-      - x1e.xlarge 
-      - x1e.2xlarge 
-      - x1e.4xlarge 
-      - x1e.8xlarge 
-      - x1e.16xlarge 
+      - r3.large
+      - r3.xlarge
+      - r3.2xlarge
+      - r3.4xlarge
+      - r3.8xlarge
+      - r4.large
+      - r4.xlarge
+      - r4.2xlarge
+      - r4.4xlarge
+      - r4.8xlarge
+      - r4.16xlarge
+      - x1.16xlarge
+      - x1.32xlarge
+      - x1e.xlarge
+      - x1e.2xlarge
+      - x1e.4xlarge
+      - x1e.8xlarge
+      - x1e.16xlarge
       - x1e.32xlarge
-      - d2.xlarge 
-      - d2.2xlarge 
-      - d2.4xlarge 
-      - d2.8xlarge 
-      - h1.2xlarge 
-      - h1.4xlarge 
-      - h1.8xlarge 
-      - h1.16xlarge 
-      - i2.xlarge 
-      - i2.2xlarge 
-      - i2.4xlarge 
-      - i2.8xlarge 
-      - i3.large 
-      - i3.xlarge 
-      - i3.2xlarge 
-      - i3.4xlarge 
-      - i3.8xlarge 
+      - d2.xlarge
+      - d2.2xlarge
+      - d2.4xlarge
+      - d2.8xlarge
+      - h1.2xlarge
+      - h1.4xlarge
+      - h1.8xlarge
+      - h1.16xlarge
+      - i2.xlarge
+      - i2.2xlarge
+      - i2.4xlarge
+      - i2.8xlarge
+      - i3.large
+      - i3.xlarge
+      - i3.2xlarge
+      - i3.4xlarge
+      - i3.8xlarge
       - i3.16xlarge
-      - f1.2xlarge 
-      - f1.16xlarge 
-      - g2.2xlarge 
-      - g2.8xlarge 
-      - g3.4xlarge 
-      - g3.8xlarge 
-      - g3.16xlarge 
-      - p2.xlarge 
-      - p2.8xlarge 
-      - p2.16xlarge 
-      - p3.2xlarge 
-      - p3.8xlarge 
+      - f1.2xlarge
+      - f1.16xlarge
+      - g2.2xlarge
+      - g2.8xlarge
+      - g3.4xlarge
+      - g3.8xlarge
+      - g3.16xlarge
+      - p2.xlarge
+      - p2.8xlarge
+      - p2.16xlarge
+      - p3.2xlarge
+      - p3.8xlarge
       - p3.16xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
-    Default: t2.large
+    Default: t3.small
     Description: The Amazon EC2 instance type for your web instances.
     Type: String
   AdminEmail:
@@ -783,7 +788,7 @@ Parameters:
     Type: String
   WPAdminPassword:
     AllowedPattern: ^([a-zA-Z0-9`~!#$%^&*()_+,\\-])*$
-    ConstraintDescription: Must be letters (upper or lower), numbers, spaces, and these special characters `~!#$%^&*()_+,-    
+    ConstraintDescription: Must be letters (upper or lower), numbers, spaces, and these special characters `~!#$%^&*()_+,-
     Description: The WordPress admin password. Letters, numbers, spaces, and these special characters `~!#$%^&*()_+,-
     Type: String
     NoEcho: true
@@ -809,18 +814,20 @@ Parameters:
     Description: The WordPress website title.
     Type: String
   AvailabilityZones:
-    Description: 'List of Availability Zones to use for the subnets in the VPC. Note:
+    Description:
+      'List of Availability Zones to use for the subnets in the VPC. Note:
       The logical order is preserved.'
     Type: List<AWS::EC2::AvailabilityZone::Name>
   NumberOfAZs:
     AllowedValues:
-    - 2
-    - 3
-    - 4
-    - 5
-    - 6
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
     Default: 3
-    Description: Number of Availability Zones to use in the VPC. This must match your
+    Description:
+      Number of Availability Zones to use in the VPC. This must match your
       selections in the list of Availability Zones parameter.
     Type: Number
   VpcCidr:
@@ -831,8 +838,8 @@ Parameters:
     Type: String
   VpcTenancy:
     AllowedValues:
-    - default
-    - dedicated
+      - default
+      - dedicated
     Default: default
     Description: The allowed tenancy of instances launched into the VPC
     Type: String
@@ -958,269 +965,201 @@ Parameters:
     Type: String
 
 Conditions:
-
   AvailableAWSRegion:
     !Or [
-      !Equals [ !Ref 'AWS::Region', ap-southeast-2 ],
-      !Equals [ !Ref 'AWS::Region', eu-central-1 ],
-      !Equals [ !Ref 'AWS::Region', eu-west-1 ],
-      !Equals [ !Ref 'AWS::Region', us-east-1 ],
-      !Equals [ !Ref 'AWS::Region', us-east-2 ],
-      !Equals [ !Ref 'AWS::Region', us-west-2 ]
+      !Equals [!Ref 'AWS::Region', ap-southeast-2],
+      !Equals [!Ref 'AWS::Region', eu-central-1],
+      !Equals [!Ref 'AWS::Region', eu-west-1],
+      !Equals [!Ref 'AWS::Region', us-east-1],
+      !Equals [!Ref 'AWS::Region', us-east-2],
+      !Equals [!Ref 'AWS::Region', us-west-2],
     ]
-  EfsCreateAlarms:
-    !Equals [ true, !Ref EfsCreateAlarms ]
-  EfsCreateNoAlarms:
-    !Equals [ false, !Ref EfsCreateAlarms ]
+  EfsCreateAlarms: !Equals [true, !Ref EfsCreateAlarms]
+  EfsCreateNoAlarms: !Equals [false, !Ref EfsCreateAlarms]
   CreateRecordSet: !And
-    - !Equals [ true, !Ref UseRoute53Boolean ]
+    - !Equals [true, !Ref UseRoute53Boolean]
     - !Condition AvailableAWSRegion
   DeployCloudFront: !And
-    - !Equals [ true, !Ref UseCloudFrontBoolean ]
-    - !Condition AvailableAWSRegion   
+    - !Equals [true, !Ref UseCloudFrontBoolean]
+    - !Condition AvailableAWSRegion
   DeployElastiCache: !And
-    - !Equals [ true, !Ref UseElastiCacheBoolean ]
+    - !Equals [true, !Ref UseElastiCacheBoolean]
     - !Condition AvailableAWSRegion
 
 Resources:
-
   bastion:
     Condition: AvailableAWSRegion
-    DependsOn: [ newvpc, securitygroups ]
+    DependsOn: [newvpc, securitygroups]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        BastionInstanceType:
-          !Ref BastionInstanceType
+        BastionInstanceType: !Ref BastionInstanceType
         BastionSecurityGroup:
-          !GetAtt [ securitygroups, Outputs.BastionSecurityGroup ]
-        EC2KeyName:
-          !Ref EC2KeyName
-        NumberOfSubnets:
-          !Ref NumberOfAZs
-        Subnet:
-          !GetAtt [ newvpc, Outputs.PublicSubnet ]
+          !GetAtt [securitygroups, Outputs.BastionSecurityGroup]
+        EC2KeyName: !Ref EC2KeyName
+        NumberOfSubnets: !Ref NumberOfAZs
+        Subnet: !GetAtt [newvpc, Outputs.PublicSubnet]
       TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-03-bastion.yaml
   cloudfront:
     Condition: DeployCloudFront
-    DependsOn: [ publicalb, web ]
+    DependsOn: [publicalb, web]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        CloudFrontAcmCertificate:
-          !Ref CloudFrontAcmCertificate
-        PublicAlbDnsName:
-          !GetAtt [ publicalb, Outputs.PublicAlbDnsName ]
-        WPDomainName:
-          !Ref WPDomainName
+        CloudFrontAcmCertificate: !Ref CloudFrontAcmCertificate
+        PublicAlbDnsName: !GetAtt [publicalb, Outputs.PublicAlbDnsName]
+        WPDomainName: !Ref WPDomainName
       TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-04-cloudfront.yaml
   dashboardwithalarms:
     Condition: EfsCreateAlarms
-    DependsOn: [ newvpc, securitygroups, publicalb, efsfilesystem, rds, efsalarms ]
+    DependsOn:
+      [newvpc, securitygroups, publicalb, efsfilesystem, rds, efsalarms]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        ElasticFileSystem:
-          !GetAtt [ efsfilesystem, Outputs.ElasticFileSystem ]
-        DatabaseCluster:
-          !GetAtt [ rds, Outputs.DatabaseCluster ]
+        ElasticFileSystem: !GetAtt [efsfilesystem, Outputs.ElasticFileSystem]
+        DatabaseCluster: !GetAtt [rds, Outputs.DatabaseCluster]
         BurstCreditBalanceDecreaseAlarmArn:
-          !GetAtt [ efsalarms, Outputs.BurstCreditBalanceDecreaseAlarmArn ]
+          !GetAtt [efsalarms, Outputs.BurstCreditBalanceDecreaseAlarmArn]
         BurstCreditBalanceIncreaseAlarmArn:
-          !GetAtt [ efsalarms, Outputs.BurstCreditBalanceIncreaseAlarmArn ]
-        CriticalAlarmArn:
-          !GetAtt [ efsalarms, Outputs.CriticalAlarmArn ]
-        WarningAlarmArn:
-          !GetAtt [ efsalarms, Outputs.WarningAlarmArn ]
-        PublicAlbFullName:
-          !GetAtt [ publicalb, Outputs.PublicAlbFullName ]
-        EfsCreateAlarms:
-          !Ref EfsCreateAlarms         
+          !GetAtt [efsalarms, Outputs.BurstCreditBalanceIncreaseAlarmArn]
+        CriticalAlarmArn: !GetAtt [efsalarms, Outputs.CriticalAlarmArn]
+        WarningAlarmArn: !GetAtt [efsalarms, Outputs.WarningAlarmArn]
+        PublicAlbFullName: !GetAtt [publicalb, Outputs.PublicAlbFullName]
+        EfsCreateAlarms: !Ref EfsCreateAlarms
       TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-06-dashboard.yaml
   dashboardwithnoalarms:
     Condition: EfsCreateNoAlarms
-    DependsOn: [ newvpc, securitygroups, publicalb, efsfilesystem, rds ]
+    DependsOn: [newvpc, securitygroups, publicalb, efsfilesystem, rds]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        ElasticFileSystem:
-          !GetAtt [ efsfilesystem, Outputs.ElasticFileSystem ]
-        DatabaseCluster:
-          !GetAtt [ rds, Outputs.DatabaseCluster ]
-        PublicAlbFullName:
-          !GetAtt [ publicalb, Outputs.PublicAlbFullName ]
-        EfsCreateAlarms:
-          !Ref EfsCreateAlarms         
+        ElasticFileSystem: !GetAtt [efsfilesystem, Outputs.ElasticFileSystem]
+        DatabaseCluster: !GetAtt [rds, Outputs.DatabaseCluster]
+        PublicAlbFullName: !GetAtt [publicalb, Outputs.PublicAlbFullName]
+        EfsCreateAlarms: !Ref EfsCreateAlarms
       TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-06-dashboard.yaml
   efsfilesystem:
-    DependsOn: [ newvpc, securitygroups ]
+    DependsOn: [newvpc, securitygroups]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        EncrpytedBoolean:
-          !Ref EfsEncrpytedBoolean
-        Cmk:
-          !Ref EfsCmk
-        EC2KeyName:
-          !Ref EC2KeyName
-        SecurityGroup:
-          !GetAtt [ securitygroups, Outputs.EfsSecurityGroup ]
-        Growth:
-          !Ref EfsGrowth
-        InstanceType:
-          !Ref EfsGrowthInstanceType
-        NumberOfSubnets:
-          !Ref NumberOfAZs  
-        PerformanceMode:
-          !Ref EfsPerformanceMode
-        Subnet:
-          !GetAtt [ newvpc, Outputs.DataSubnet ]
+        EncrpytedBoolean: !Ref EfsEncrpytedBoolean
+        Cmk: !Ref EfsCmk
+        EC2KeyName: !Ref EC2KeyName
+        SecurityGroup: !GetAtt [securitygroups, Outputs.EfsSecurityGroup]
+        Growth: !Ref EfsGrowth
+        InstanceType: !Ref EfsGrowthInstanceType
+        NumberOfSubnets: !Ref NumberOfAZs
+        PerformanceMode: !Ref EfsPerformanceMode
+        Subnet: !GetAtt [newvpc, Outputs.DataSubnet]
       TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-03-efsfilesystem.yaml
   efsalarms:
     Condition: EfsCreateAlarms
-    DependsOn: [ efsfilesystem ]
+    DependsOn: [efsfilesystem]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        CriticalThreshold:
-          !Ref EfsCriticalThreshold
-        EC2KeyName:
-          !Ref EC2KeyName
-        ElasticFileSystem:
-          !GetAtt [ efsfilesystem, Outputs.ElasticFileSystem ]
-        EmailAddress:
-          !Ref AdminEmail
-        SecurityGroup:
-          !GetAtt [ securitygroups, Outputs.EfsSecurityGroup ]
-        InstanceType:
-          !Ref EfsAlarmsInstanceType
-        NumberOfSubnets:
-          !Ref NumberOfAZs  
-        Subnet:
-          !GetAtt [ newvpc, Outputs.DataSubnet ]
-        WarningThreshold:
-          !Ref EfsWarningThreshold
+        CriticalThreshold: !Ref EfsCriticalThreshold
+        EC2KeyName: !Ref EC2KeyName
+        ElasticFileSystem: !GetAtt [efsfilesystem, Outputs.ElasticFileSystem]
+        EmailAddress: !Ref AdminEmail
+        SecurityGroup: !GetAtt [securitygroups, Outputs.EfsSecurityGroup]
+        InstanceType: !Ref EfsAlarmsInstanceType
+        NumberOfSubnets: !Ref NumberOfAZs
+        Subnet: !GetAtt [newvpc, Outputs.DataSubnet]
+        WarningThreshold: !Ref EfsWarningThreshold
       TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-03-efsalarms.yaml
   elasticache:
     Condition: DeployElastiCache
-    DependsOn: [ newvpc, securitygroups ]
+    DependsOn: [newvpc, securitygroups]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        Subnet:
-          !GetAtt [ newvpc, Outputs.DataSubnet ]
-        ElastiCacheNodeType:
-          !Ref ElastiCacheNodeType
+        Subnet: !GetAtt [newvpc, Outputs.DataSubnet]
+        ElastiCacheNodeType: !Ref ElastiCacheNodeType
         ElastiCacheSecurityGroup:
-          !GetAtt [ securitygroups, Outputs.ElastiCacheSecurityGroup ]
-        NumberOfSubnets:
-          !Ref NumberOfAZs
+          !GetAtt [securitygroups, Outputs.ElastiCacheSecurityGroup]
+        NumberOfSubnets: !Ref NumberOfAZs
       TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-03-elasticache.yaml
   newvpc:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        NumberOfAZs:
-          !Ref NumberOfAZs
-        AvailabilityZones:
-          !Join
-            - ','
-            - !Ref AvailabilityZones
-        VpcCidr:
-          !Ref VpcCidr
-        VpcTenancy:
-          !Ref VpcTenancy
-        PublicSubnet0Cidr:
-          !Ref PublicSubnet0Cidr
-        PublicSubnet1Cidr:
-          !Ref PublicSubnet1Cidr
-        PublicSubnet2Cidr:
-          !Ref PublicSubnet2Cidr
-        PublicSubnet3Cidr:
-          !Ref PublicSubnet3Cidr
-        PublicSubnet4Cidr:
-          !Ref PublicSubnet4Cidr
-        PublicSubnet5Cidr:
-          !Ref PublicSubnet5Cidr
-        WebSubnet0Cidr:
-          !Ref WebSubnet0Cidr
-        WebSubnet1Cidr:
-          !Ref WebSubnet1Cidr
-        WebSubnet2Cidr:
-          !Ref WebSubnet2Cidr
-        WebSubnet3Cidr:
-          !Ref WebSubnet3Cidr
-        WebSubnet4Cidr:
-          !Ref WebSubnet4Cidr
-        WebSubnet5Cidr:
-          !Ref WebSubnet5Cidr
-        DataSubnet0Cidr:
-          !Ref DataSubnet0Cidr
-        DataSubnet1Cidr:
-          !Ref DataSubnet1Cidr
-        DataSubnet2Cidr:
-          !Ref DataSubnet2Cidr
-        DataSubnet3Cidr:
-          !Ref DataSubnet3Cidr
-        DataSubnet4Cidr:
-          !Ref DataSubnet4Cidr
-        DataSubnet5Cidr:
-          !Ref DataSubnet5Cidr
+        NumberOfAZs: !Ref NumberOfAZs
+        AvailabilityZones: !Join
+          - ','
+          - !Ref AvailabilityZones
+        VpcCidr: !Ref VpcCidr
+        VpcTenancy: !Ref VpcTenancy
+        PublicSubnet0Cidr: !Ref PublicSubnet0Cidr
+        PublicSubnet1Cidr: !Ref PublicSubnet1Cidr
+        PublicSubnet2Cidr: !Ref PublicSubnet2Cidr
+        PublicSubnet3Cidr: !Ref PublicSubnet3Cidr
+        PublicSubnet4Cidr: !Ref PublicSubnet4Cidr
+        PublicSubnet5Cidr: !Ref PublicSubnet5Cidr
+        WebSubnet0Cidr: !Ref WebSubnet0Cidr
+        WebSubnet1Cidr: !Ref WebSubnet1Cidr
+        WebSubnet2Cidr: !Ref WebSubnet2Cidr
+        WebSubnet3Cidr: !Ref WebSubnet3Cidr
+        WebSubnet4Cidr: !Ref WebSubnet4Cidr
+        WebSubnet5Cidr: !Ref WebSubnet5Cidr
+        DataSubnet0Cidr: !Ref DataSubnet0Cidr
+        DataSubnet1Cidr: !Ref DataSubnet1Cidr
+        DataSubnet2Cidr: !Ref DataSubnet2Cidr
+        DataSubnet3Cidr: !Ref DataSubnet3Cidr
+        DataSubnet4Cidr: !Ref DataSubnet4Cidr
+        DataSubnet5Cidr: !Ref DataSubnet5Cidr
       TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-01-newvpc.yaml
   publicalb:
     Condition: AvailableAWSRegion
-    DependsOn: [ newvpc, securitygroups ]
+    DependsOn: [newvpc, securitygroups]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        NumberOfSubnets:
-          !Ref NumberOfAZs
-        Subnet:
-          !GetAtt [ newvpc, Outputs.PublicSubnet ]
-        PublicAlbAcmCertificate:
-          !Ref PublicAlbAcmCertificate
+        NumberOfSubnets: !Ref NumberOfAZs
+        Subnet: !GetAtt [newvpc, Outputs.PublicSubnet]
+        PublicAlbAcmCertificate: !Ref PublicAlbAcmCertificate
         PublicAlbSecurityGroup:
-          !GetAtt [ securitygroups, Outputs.PublicAlbSecurityGroup ]
-        Vpc:
-          !GetAtt [ newvpc, Outputs.Vpc ]
+          !GetAtt [securitygroups, Outputs.PublicAlbSecurityGroup]
+        Vpc: !GetAtt [newvpc, Outputs.Vpc]
       TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-03-publicalb.yaml
   rds:
     Condition: AvailableAWSRegion
-    DependsOn: [ newvpc, securitygroups ]
+    DependsOn: [newvpc, securitygroups]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        DatabaseInstanceType:
-          !Ref DatabaseInstanceType
-        DatabaseMasterUsername:
-          !Ref DatabaseMasterUsername
-        DatabaseMasterPassword:
-          !Ref DatabaseMasterPassword
-        DatabaseName:
-          !Ref DatabaseName
-        DatabaseEncrpytedBoolean:
-          !Ref DatabaseEncrpytedBoolean
-        DatabaseCmk:
-          !Ref DatabaseCmk
+        DatabaseInstanceType: !Ref DatabaseInstanceType
+        DatabaseMasterUsername: !Ref DatabaseMasterUsername
+        DatabaseMasterPassword: !Ref DatabaseMasterPassword
+        DatabaseName: !Ref DatabaseName
+        DatabaseEncrpytedBoolean: !Ref DatabaseEncrpytedBoolean
+        DatabaseCmk: !Ref DatabaseCmk
         DatabaseSecurityGroup:
-          !GetAtt [ securitygroups, Outputs.DatabaseSecurityGroup ]
-        Subnet:
-          !GetAtt [ newvpc, Outputs.DataSubnet ]
-        NumberOfSubnets:
-          !Ref NumberOfAZs
+          !GetAtt [securitygroups, Outputs.DatabaseSecurityGroup]
+        Subnet: !GetAtt [newvpc, Outputs.DataSubnet]
+        NumberOfSubnets: !Ref NumberOfAZs
       TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-03-rds.yaml
   route53:
     Condition: CreateRecordSet
-    DependsOn: [ publicalb, web ]
+    DependsOn: [publicalb, web]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
         DnsEndpoint:
-          !If [ DeployCloudFront, !GetAtt [ cloudfront, Outputs.DnsEndpoint ], !GetAtt [ publicalb, Outputs.PublicAlbDnsName ] ]
+          !If [
+            DeployCloudFront,
+            !GetAtt [cloudfront, Outputs.DnsEndpoint],
+            !GetAtt [publicalb, Outputs.PublicAlbDnsName],
+          ]
         DnsHostId:
-          !If [ DeployCloudFront, 'Z2FDTNDATAQYW2', !GetAtt [ publicalb, Outputs.PublicAlbCanonicalHostedZoneId ] ]
-        WPDomainName:
-          !Ref WPDomainName
+          !If [
+            DeployCloudFront,
+            'Z2FDTNDATAQYW2',
+            !GetAtt [publicalb, Outputs.PublicAlbCanonicalHostedZoneId],
+          ]
+        WPDomainName: !Ref WPDomainName
       TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-05-route53.yaml
   securitygroups:
     Condition: AvailableAWSRegion
@@ -1228,79 +1167,83 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        SshAccessCidr:
-          !Ref SshAccessCidr
-        Vpc:
-          !GetAtt [ newvpc, Outputs.Vpc ]
+        SshAccessCidr: !Ref SshAccessCidr
+        Vpc: !GetAtt [newvpc, Outputs.Vpc]
       TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-02-securitygroups.yaml
   web:
     Condition: AvailableAWSRegion
-    DependsOn: [ efsfilesystem, newvpc, publicalb, securitygroups ]
+    DependsOn: [efsfilesystem, newvpc, publicalb, securitygroups]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
         DatabaseClusterEndpointAddress:
-          !GetAtt [ rds, Outputs.DatabaseClusterEndpointAddress ]
-        DatabaseMasterUsername:
-          !Ref DatabaseMasterUsername
-        DatabaseMasterPassword:
-          !Ref DatabaseMasterPassword
-        DatabaseName:
-          !Ref DatabaseName
-        ElasticFileSystem:
-          !GetAtt [ efsfilesystem, Outputs.ElasticFileSystem ]
-        EC2KeyName:
-          !Ref EC2KeyName
-        NumberOfSubnets:
-          !Ref NumberOfAZs
-        PHPIniOverride:
-          !Ref PHPIniOverride
-        PHPVersion:
-          !Ref PHPVersion
+          !GetAtt [rds, Outputs.DatabaseClusterEndpointAddress]
+        DatabaseMasterUsername: !Ref DatabaseMasterUsername
+        DatabaseMasterPassword: !Ref DatabaseMasterPassword
+        DatabaseName: !Ref DatabaseName
+        ElasticFileSystem: !GetAtt [efsfilesystem, Outputs.ElasticFileSystem]
+        EC2KeyName: !Ref EC2KeyName
+        NumberOfSubnets: !Ref NumberOfAZs
+        PHPIniOverride: !Ref PHPIniOverride
+        PHPVersion: !Ref PHPVersion
         PublicAlbTargetGroupArn:
-          !GetAtt [ publicalb, Outputs.PublicAlbTargetGroupArn ]
-        PublicAlbHostname:
-          !GetAtt [ publicalb, Outputs.PublicAlbHostname ]
-        SslCertificate:
-          !GetAtt [ publicalb, Outputs.SslCertificate ]
-        WebAsgMax:
-          !Ref WebAsgMax
-        WebAsgMin:
-          !Ref WebAsgMin
-        WebInstanceType:
-          !Ref WebInstanceType
-        WebSecurityGroup:
-          !GetAtt [ securitygroups, Outputs.WebSecurityGroup ]
-        Subnet:
-          !GetAtt [ newvpc, Outputs.WebSubnet ]
-        WPAdminEmail:
-          !Ref AdminEmail
-        WPAdminPassword:
-          !Ref WPAdminPassword
-        WPAdminUsername:
-          !Ref WPAdminUsername
-        WPDirectory:
-          !Ref WPDirectory
-        WPDomainName:
-          !Ref WPDomainName
-        WPLocale:
-          !Ref WPLocale
-        WPTitle:
-          !Ref WPTitle
-        WPVersion:
-          !Ref WPVersion
+          !GetAtt [publicalb, Outputs.PublicAlbTargetGroupArn]
+        PublicAlbHostname: !GetAtt [publicalb, Outputs.PublicAlbHostname]
+        SslCertificate: !GetAtt [publicalb, Outputs.SslCertificate]
+        WebAsgMax: !Ref WebAsgMax
+        WebAsgMin: !Ref WebAsgMin
+        WebInstanceType: !Ref WebInstanceType
+        WebSecurityGroup: !GetAtt [securitygroups, Outputs.WebSecurityGroup]
+        Subnet: !GetAtt [newvpc, Outputs.WebSubnet]
+        WPAdminEmail: !Ref AdminEmail
+        WPAdminPassword: !Ref WPAdminPassword
+        WPAdminUsername: !Ref WPAdminUsername
+        WPDirectory: !Ref WPDirectory
+        WPDomainName: !Ref WPDomainName
+        WPLocale: !Ref WPLocale
+        WPTitle: !Ref WPTitle
+        WPVersion: !Ref WPVersion
       TemplateURL: https://s3.amazonaws.com/aws-refarch/wordpress/latest/templates/aws-refarch-wordpress-04-web.yaml
 
 Outputs:
-
   StackStatus:
     Description: Master Stack Status
-    Value: !If [ AvailableAWSRegion, !Join [ '', [ 'Stack created in an available region: ', !Ref 'AWS::Region' ] ], "!!ERROR!!! - Nothing to do! - unavailable AWS Region. You must create this stack in an available AWS Region: 'us-east-1', 'us-east-2', 'us-west-2', 'eu-west-1', 'ap-southeast-2'." ]
+    Value:
+      !If [
+        AvailableAWSRegion,
+        !Join [
+          '',
+          ['Stack created in an available region: ', !Ref 'AWS::Region'],
+        ],
+        "!!ERROR!!! - Nothing to do! - unavailable AWS Region. You must create this stack in an available AWS Region: 'us-east-1', 'us-east-2', 'us-west-2', 'eu-west-1', 'ap-southeast-2'.",
+      ]
   WPSiteUrl:
     Description: The URL of the WordPress site
-    Value: !If [ CreateRecordSet, !Join [ '', [ 'http://www.', !Ref WPDomainName ] ], !If [ DeployCloudFront, !GetAtt [ cloudfront, Outputs.DnsHostname ], !GetAtt [ publicalb, Outputs.PublicAlbHostname ] ] ]
+    Value:
+      !If [
+        CreateRecordSet,
+        !Join ['', ['http://www.', !Ref WPDomainName]],
+        !If [
+          DeployCloudFront,
+          !GetAtt [cloudfront, Outputs.DnsHostname],
+          !GetAtt [publicalb, Outputs.PublicAlbHostname],
+        ],
+      ]
   OpCacheValidationUrl:
     Description: A page to validate OpCache has been enabled for each instance in the ASG. Refresh the page to see the status of each instance in the ASG.
-    Value: !Join [ '', [ !If [ CreateRecordSet, !Join [ '', [ 'http://www.', !Ref WPDomainName ] ], !If [ DeployCloudFront, !GetAtt [ cloudfront, Outputs.DnsHostname ], !GetAtt [ publicalb, Outputs.PublicAlbHostname ] ] ], '/opcache-instanceid.php' ] ]
-
-    
+    Value:
+      !Join [
+        '',
+        [
+          !If [
+            CreateRecordSet,
+            !Join ['', ['http://www.', !Ref WPDomainName]],
+            !If [
+              DeployCloudFront,
+              !GetAtt [cloudfront, Outputs.DnsHostname],
+              !GetAtt [publicalb, Outputs.PublicAlbHostname],
+            ],
+          ],
+          '/opcache-instanceid.php',
+        ],
+      ]

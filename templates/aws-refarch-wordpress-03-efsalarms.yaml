@@ -1,14 +1,13 @@
----
 AWSTemplateFormatVersion: 2010-09-09
 
 Description: Reference Architecture to host WordPress on AWS - Creates EFS alarms
 
 Metadata:
-
   Authors:
     Description: Darryl Osborne (darrylo@amazon.com)
   License:
-    Description: 'Copyright 2018 Amazon.com, Inc. and its affiliates. All Rights Reserved.
+    Description:
+      'Copyright 2018 Amazon.com, Inc. and its affiliates. All Rights Reserved.
       Licensed under the Amazon Software License (the "License"). You may not use this file
       except in compliance with the License. A copy of the License is located at
       http://aws.amazon.com/asl/
@@ -17,20 +16,19 @@ Metadata:
       License for the specific language governing permissions and limitations under the License.'
 
   AWS::CloudFormation::Interface:
-
     ParameterGroups:
-    - Label:
-        default: Amazon EFS Parameters
-      Parameters:
-        - ElasticFileSystem
-        - WarningThreshold
-        - CriticalThreshold        
-        - EmailAddress
-        - InstanceType
-        - EC2KeyName
-        - SecurityGroup
-        - NumberOfSubnets
-        - Subnet
+      - Label:
+          default: Amazon EFS Parameters
+        Parameters:
+          - ElasticFileSystem
+          - WarningThreshold
+          - CriticalThreshold
+          - EmailAddress
+          - InstanceType
+          - EC2KeyName
+          - SecurityGroup
+          - NumberOfSubnets
+          - Subnet
     ParameterLabels:
       CriticalThreshold:
         default: Burst Credit Balance Critical Threshold (Minutes)
@@ -52,7 +50,6 @@ Metadata:
         default: Burst Credit Balance Warning Threshold (Minutes)
 
 Parameters:
-
   CriticalThreshold:
     AllowedPattern: ^[0-9]+$
     ConstraintDescription: Must be an integer.
@@ -61,7 +58,7 @@ Parameters:
     Type: String
   SecurityGroup:
     Description: Select the Amazon EFS security group.
-    Type: AWS::EC2::SecurityGroup::Id  
+    Type: AWS::EC2::SecurityGroup::Id
   ElasticFileSystem:
     Description: The Amazon EFS file system id.
     Type: String
@@ -142,14 +139,14 @@ Parameters:
     Type: AWS::EC2::KeyPair::KeyName
   NumberOfSubnets:
     AllowedValues:
-    - 2
-    - 3
-    - 4
-    - 5
-    - 6
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
     Default: 3
     Description: Number of subnets. This must match your selections in the list of Subnets below.
-    Type: String  
+    Type: String
   Subnet:
     Description: Select existing subnets.
     Type: List<AWS::EC2::Subnet::Id>
@@ -161,19 +158,12 @@ Parameters:
     Type: String
 
 Conditions:
-  
-  NumberOfSubnets1:
-      !Equals [ 1, !Ref NumberOfSubnets ]
-  NumberOfSubnets2:
-      !Equals [ 2, !Ref NumberOfSubnets ]
-  NumberOfSubnets3:
-      !Equals [ 3, !Ref NumberOfSubnets ]
-  NumberOfSubnets4:
-      !Equals [ 4, !Ref NumberOfSubnets ]
-  NumberOfSubnets5:
-      !Equals [ 5, !Ref NumberOfSubnets ]
-  NumberOfSubnets6:
-      !Equals [ 6, !Ref NumberOfSubnets ]
+  NumberOfSubnets1: !Equals [1, !Ref NumberOfSubnets]
+  NumberOfSubnets2: !Equals [2, !Ref NumberOfSubnets]
+  NumberOfSubnets3: !Equals [3, !Ref NumberOfSubnets]
+  NumberOfSubnets4: !Equals [4, !Ref NumberOfSubnets]
+  NumberOfSubnets5: !Equals [5, !Ref NumberOfSubnets]
+  NumberOfSubnets6: !Equals [6, !Ref NumberOfSubnets]
   Subnet0: !Or
     - !Condition NumberOfSubnets1
     - !Condition NumberOfSubnets2
@@ -202,7 +192,6 @@ Conditions:
   Subnet5: !Condition NumberOfSubnets6
 
 Mappings:
-
   RegionMap:
     ap-northeast-1:
       AMI: ami-2a69be4c
@@ -234,7 +223,6 @@ Mappings:
       AMI: ami-e689729e
 
 Resources:
-
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
@@ -247,30 +235,60 @@ Resources:
       DesiredCapacity: 1
       Tags:
         - Key: Name
-          Value: !Join [ '', [ 'Updating ', !Ref 'ElasticFileSystem', ' burst credit balance Cloudwatch alarms.. will auto terminate' ] ]
+          Value:
+            !Join [
+              '',
+              [
+                'Updating ',
+                !Ref 'ElasticFileSystem',
+                ' burst credit balance Cloudwatch alarms.. will auto terminate',
+              ],
+            ]
           PropagateAtLaunch: true
       VPCZoneIdentifier:
-        !If
-          [ NumberOfSubnets1,
-          [ !Select [ 0, !Ref Subnet ] ],
-          !If
-            [ NumberOfSubnets2,
-            [ !Select [ 0, !Ref Subnet ], !Select [ 1, !Ref Subnet ] ],
-            !If
-              [ NumberOfSubnets3,
-              [ !Select [ 0, !Ref Subnet ], !Select [ 1, !Ref Subnet ], !Select [ 2, !Ref Subnet ] ],
-              !If
-                [ NumberOfSubnets4,
-                [ !Select [ 0, !Ref Subnet ], !Select [ 1, !Ref Subnet ], !Select [ 2, !Ref Subnet ], !Select [ 3, !Ref Subnet ] ],
-                !If
-                  [ NumberOfSubnets5,
-                  [ !Select [ 0, !Ref Subnet ], !Select [ 1, !Ref Subnet ], !Select [ 2, !Ref Subnet ], !Select [ 3, !Ref Subnet ], !Select [ 4, !Ref Subnet ] ],
-                  [ !Select [ 0, !Ref Subnet ], !Select [ 1, !Ref Subnet ], !Select [ 2, !Ref Subnet ], !Select [ 3, !Ref Subnet ], !Select [ 4, !Ref Subnet ], !Select [ 5, !Ref Subnet ] ]
-                  ]
-                ]
-              ]
-            ]
-          ]
+        !If [
+          NumberOfSubnets1,
+          [!Select [0, !Ref Subnet]],
+          !If [
+            NumberOfSubnets2,
+            [!Select [0, !Ref Subnet], !Select [1, !Ref Subnet]],
+            !If [
+              NumberOfSubnets3,
+              [
+                !Select [0, !Ref Subnet],
+                !Select [1, !Ref Subnet],
+                !Select [2, !Ref Subnet],
+              ],
+              !If [
+                NumberOfSubnets4,
+                [
+                  !Select [0, !Ref Subnet],
+                  !Select [1, !Ref Subnet],
+                  !Select [2, !Ref Subnet],
+                  !Select [3, !Ref Subnet],
+                ],
+                !If [
+                  NumberOfSubnets5,
+                  [
+                    !Select [0, !Ref Subnet],
+                    !Select [1, !Ref Subnet],
+                    !Select [2, !Ref Subnet],
+                    !Select [3, !Ref Subnet],
+                    !Select [4, !Ref Subnet],
+                  ],
+                  [
+                    !Select [0, !Ref Subnet],
+                    !Select [1, !Ref Subnet],
+                    !Select [2, !Ref Subnet],
+                    !Select [3, !Ref Subnet],
+                    !Select [4, !Ref Subnet],
+                    !Select [5, !Ref Subnet],
+                  ],
+                ],
+              ],
+            ],
+          ],
+        ]
     CreationPolicy:
       ResourceSignal:
         Count: 0
@@ -287,14 +305,32 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmActions:
-      - !Ref SNSTopic
-      - !Ref AutoScalingPolicy
-      AlarmDescription: !Join [ '', [ 'Set ', !Ref ElasticFileSystem, ' burst credit balance decrease threshold - ',  !Ref 'AWS::StackName' ] ]
-      AlarmName: !Join [ '', [ 'Set ', !Ref ElasticFileSystem, ' burst credit balance decrease threshold - ', !Ref 'AWS::StackName'  ] ]
+        - !Ref SNSTopic
+        - !Ref AutoScalingPolicy
+      AlarmDescription:
+        !Join [
+          '',
+          [
+            'Set ',
+            !Ref ElasticFileSystem,
+            ' burst credit balance decrease threshold - ',
+            !Ref 'AWS::StackName',
+          ],
+        ]
+      AlarmName:
+        !Join [
+          '',
+          [
+            'Set ',
+            !Ref ElasticFileSystem,
+            ' burst credit balance decrease threshold - ',
+            !Ref 'AWS::StackName',
+          ],
+        ]
       ComparisonOperator: LessThanThreshold
       Dimensions:
-      - Name: FileSystemId
-        Value: !Ref ElasticFileSystem
+        - Name: FileSystemId
+          Value: !Ref ElasticFileSystem
       EvaluationPeriods: 10
       MetricName: PermittedThroughput
       Namespace: AWS/EFS
@@ -307,14 +343,32 @@ Resources:
     DependsOn: BurstCreditBalanceDecreaseAlarm
     Properties:
       AlarmActions:
-      - !Ref SNSTopic
-      - !Ref AutoScalingPolicy
-      AlarmDescription: !Join [ '', [ 'Set ', !Ref ElasticFileSystem, ' burst credit balance increase threshold - ',  !Ref 'AWS::StackName' ] ]
-      AlarmName: !Join [ '', [ 'Set ', !Ref ElasticFileSystem, ' burst credit balance increase threshold - ', !Ref 'AWS::StackName'  ] ]
+        - !Ref SNSTopic
+        - !Ref AutoScalingPolicy
+      AlarmDescription:
+        !Join [
+          '',
+          [
+            'Set ',
+            !Ref ElasticFileSystem,
+            ' burst credit balance increase threshold - ',
+            !Ref 'AWS::StackName',
+          ],
+        ]
+      AlarmName:
+        !Join [
+          '',
+          [
+            'Set ',
+            !Ref ElasticFileSystem,
+            ' burst credit balance increase threshold - ',
+            !Ref 'AWS::StackName',
+          ],
+        ]
       ComparisonOperator: LessThanThreshold
       Dimensions:
-      - Name: FileSystemId
-        Value: !Ref ElasticFileSystem
+        - Name: FileSystemId
+          Value: !Ref ElasticFileSystem
       EvaluationPeriods: 10
       MetricName: PermittedThroughput
       Namespace: AWS/EFS
@@ -326,13 +380,29 @@ Resources:
     Type: AWS::CloudWatch::Alarm
     Properties:
       AlarmActions:
-      - !Ref SNSTopic
-      AlarmDescription: !Join [ '', [ !Ref ElasticFileSystem, ' burst credit balance - Critical - ',  !Ref 'AWS::StackName' ] ]
-      AlarmName: !Join [ '', [ !Ref ElasticFileSystem, ' burst credit balance - Critical - ',  !Ref 'AWS::StackName' ] ]
+        - !Ref SNSTopic
+      AlarmDescription:
+        !Join [
+          '',
+          [
+            !Ref ElasticFileSystem,
+            ' burst credit balance - Critical - ',
+            !Ref 'AWS::StackName',
+          ],
+        ]
+      AlarmName:
+        !Join [
+          '',
+          [
+            !Ref ElasticFileSystem,
+            ' burst credit balance - Critical - ',
+            !Ref 'AWS::StackName',
+          ],
+        ]
       ComparisonOperator: LessThanThreshold
       Dimensions:
-      - Name: FileSystemId
-        Value: !Ref ElasticFileSystem
+        - Name: FileSystemId
+          Value: !Ref ElasticFileSystem
       EvaluationPeriods: 10
       MetricName: BurstCreditBalance
       Namespace: AWS/EFS
@@ -345,39 +415,39 @@ Resources:
     Properties:
       Path: /
       Roles:
-      - !Ref InstanceRole
+        - !Ref InstanceRole
   InstanceRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - ec2.amazonaws.com
-          Action:
-          - sts:AssumeRole
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
       Path: /
       Policies:
-      - PolicyName: efs-burst-credit-balance-cloudwatch-alarms
-        PolicyDocument:
-          Version: 2012-10-17
-          Statement:
-          - Effect: Allow
-            Action:
-              - cloudwatch:GetMetricStatistics
-              - cloudwatch:PutMetricAlarm
-              - autoscaling:DescribeAutoScalingGroups
-              - autoscaling:DescribeAutoScalingInstances
-              - autoscaling:DescribePolicies
-              - autoscaling:UpdateAutoScalingGroup
-              - elasticfilesystem:DescribeFileSystems
-            Resource: '*'
-          - Effect: Allow
-            Action:
-              - sns:Publish
-            Resource: !Ref SNSTopic
+        - PolicyName: efs-burst-credit-balance-cloudwatch-alarms
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:GetMetricStatistics
+                  - cloudwatch:PutMetricAlarm
+                  - autoscaling:DescribeAutoScalingGroups
+                  - autoscaling:DescribeAutoScalingInstances
+                  - autoscaling:DescribePolicies
+                  - autoscaling:UpdateAutoScalingGroup
+                  - elasticfilesystem:DescribeFileSystems
+                Resource: '*'
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource: !Ref SNSTopic
   LaunchConfiguration:
     Type: AWS::AutoScaling::LaunchConfiguration
     DependsOn: WarningAlarm
@@ -387,11 +457,12 @@ Resources:
           set_cloudwatch_alarms:
             - set-cloudwatch-alarms
         set-cloudwatch-alarms:
-          files:              
+          files:
             /tmp/set-cloudwatch-alarms.sh:
               content:
                 !Join [
-                  "",[
+                  '',
+                  [
                     "#!/bin/bash -x\n",
                     "\n",
                     "FILE_SYSTEM_ID=$1\n",
@@ -443,9 +514,13 @@ Resources:
                     "\n",
                     "# calculate new burst credit balance critical threshold\n",
                     "burst_credit_balance_threshold_critical=$(( ${burst_credit_balance:0:-2} - ( ( ( ${burst_credit_balance:0:-2} / ( ${permitted_throughput:0:-2} * 60 ) ) - $CRITICAL_THRESHOLD_MINUTES ) * ( ${permitted_throughput:0:-2} * 60 ) ) ))\n",
-                    "\n",                    
+                    "\n",
                     "# update warning alarm with new burst credit balance warning threshold\n",
-                    "aws cloudwatch put-metric-alarm --alarm-name ''${FILE_SYSTEM_ID}' burst credit balance - Warning - '", !Ref 'AWS::StackName', " --alarm-description ''${FILE_SYSTEM_ID}' burst credit balance - Warning - '", !Ref 'AWS::StackName', " --actions-enabled --alarm-actions ${SNS_ARN} --metric-name BurstCreditBalance --namespace AWS/EFS --statistic Sum --dimensions Name=FileSystemId,Value=${FILE_SYSTEM_ID} --period 60 --evaluation-periods 5 --threshold ${burst_credit_balance_threshold_warning} --comparison-operator LessThanThreshold --treat-missing-data missing --region ${region}\n",
+                    "aws cloudwatch put-metric-alarm --alarm-name ''${FILE_SYSTEM_ID}' burst credit balance - Warning - '",
+                    !Ref 'AWS::StackName',
+                    " --alarm-description ''${FILE_SYSTEM_ID}' burst credit balance - Warning - '",
+                    !Ref 'AWS::StackName',
+                    " --actions-enabled --alarm-actions ${SNS_ARN} --metric-name BurstCreditBalance --namespace AWS/EFS --statistic Sum --dimensions Name=FileSystemId,Value=${FILE_SYSTEM_ID} --period 60 --evaluation-periods 5 --threshold ${burst_credit_balance_threshold_warning} --comparison-operator LessThanThreshold --treat-missing-data missing --region ${region}\n",
                     "result=$?\n",
                     "if [ $result -ne 0 ]; then\n",
                     "   aws sns publish --topic-arn ${SNS_ARN} --region ${region} --message 'Amazon EFS burst credit balance CloudWatch alarm error. Check CloudWatch alarms for file system '${FILE_SYSTEM_ID}'.'\n",
@@ -453,7 +528,11 @@ Resources:
                     "fi\n",
                     "\n",
                     "# update critical alarm with new burst credit balance critical threshold\n",
-                    "aws cloudwatch put-metric-alarm --alarm-name ''${FILE_SYSTEM_ID}' burst credit balance - Critical - '", !Ref 'AWS::StackName', " --alarm-description ''${FILE_SYSTEM_ID}' burst credit balance - Critical - '", !Ref 'AWS::StackName', " --actions-enabled --alarm-actions ${SNS_ARN} --metric-name BurstCreditBalance --namespace AWS/EFS --statistic Sum --dimensions Name=FileSystemId,Value=${FILE_SYSTEM_ID} --period 60 --evaluation-periods 5 --threshold ${burst_credit_balance_threshold_critical} --comparison-operator LessThanThreshold --treat-missing-data missing --region ${region}\n",
+                    "aws cloudwatch put-metric-alarm --alarm-name ''${FILE_SYSTEM_ID}' burst credit balance - Critical - '",
+                    !Ref 'AWS::StackName',
+                    " --alarm-description ''${FILE_SYSTEM_ID}' burst credit balance - Critical - '",
+                    !Ref 'AWS::StackName',
+                    " --actions-enabled --alarm-actions ${SNS_ARN} --metric-name BurstCreditBalance --namespace AWS/EFS --statistic Sum --dimensions Name=FileSystemId,Value=${FILE_SYSTEM_ID} --period 60 --evaluation-periods 5 --threshold ${burst_credit_balance_threshold_critical} --comparison-operator LessThanThreshold --treat-missing-data missing --region ${region}\n",
                     "result=$?\n",
                     "if [ $result -ne 0 ]; then\n",
                     "   aws sns publish --topic-arn ${SNS_ARN} --region ${region} --message 'Amazon EFS burst credit balance CloudWatch alarm error. Check CloudWatch alarms for file system '${FILE_SYSTEM_ID}'.'\n",
@@ -461,7 +540,11 @@ Resources:
                     "fi\n",
                     "\n",
                     "# update burst credit balance increase threshold based\n",
-                    "aws cloudwatch put-metric-alarm --alarm-name 'Set '${FILE_SYSTEM_ID}' burst credit balance increase threshold - '", !Ref 'AWS::StackName', " --alarm-description 'Set '${FILE_SYSTEM_ID}' burst credit balance increase threshold - '", !Ref 'AWS::StackName', " --actions-enabled --alarm-actions ${SNS_ARN} ${asg_policy_arn} --metric-name PermittedThroughput --namespace AWS/EFS --statistic Sum --dimensions Name=FileSystemId,Value=${FILE_SYSTEM_ID} --period 60 --evaluation-periods 5 --threshold ${permitted_throughput:0:-2} --comparison-operator GreaterThanThreshold --treat-missing-data missing --region ${region}\n",
+                    "aws cloudwatch put-metric-alarm --alarm-name 'Set '${FILE_SYSTEM_ID}' burst credit balance increase threshold - '",
+                    !Ref 'AWS::StackName',
+                    " --alarm-description 'Set '${FILE_SYSTEM_ID}' burst credit balance increase threshold - '",
+                    !Ref 'AWS::StackName',
+                    " --actions-enabled --alarm-actions ${SNS_ARN} ${asg_policy_arn} --metric-name PermittedThroughput --namespace AWS/EFS --statistic Sum --dimensions Name=FileSystemId,Value=${FILE_SYSTEM_ID} --period 60 --evaluation-periods 5 --threshold ${permitted_throughput:0:-2} --comparison-operator GreaterThanThreshold --treat-missing-data missing --region ${region}\n",
                     "result=$?\n",
                     "if [ $result -ne 0 ]; then\n",
                     "   aws sns publish --topic-arn ${SNS_ARN} --region ${region} --message 'Amazon EFS burst credit balance CloudWatch alarm error. Check CloudWatch alarms for file system '${FILE_SYSTEM_ID}'.'\n",
@@ -469,7 +552,11 @@ Resources:
                     "fi\n",
                     "\n",
                     "# update burst credit balance decrease threshold based\n",
-                    "aws cloudwatch put-metric-alarm --alarm-name 'Set '${FILE_SYSTEM_ID}' burst credit balance decrease threshold - '", !Ref 'AWS::StackName', " --alarm-description 'Set '${FILE_SYSTEM_ID}' burst credit balance decrease threshold - '", !Ref 'AWS::StackName', " --actions-enabled --alarm-actions ${SNS_ARN} ${asg_policy_arn} --metric-name PermittedThroughput --namespace AWS/EFS --statistic Sum --dimensions Name=FileSystemId,Value=${FILE_SYSTEM_ID} --period 60 --evaluation-periods 5 --threshold ${permitted_throughput:0:-2} --comparison-operator LessThanThreshold --treat-missing-data missing --region ${region}\n",
+                    "aws cloudwatch put-metric-alarm --alarm-name 'Set '${FILE_SYSTEM_ID}' burst credit balance decrease threshold - '",
+                    !Ref 'AWS::StackName',
+                    " --alarm-description 'Set '${FILE_SYSTEM_ID}' burst credit balance decrease threshold - '",
+                    !Ref 'AWS::StackName',
+                    " --actions-enabled --alarm-actions ${SNS_ARN} ${asg_policy_arn} --metric-name PermittedThroughput --namespace AWS/EFS --statistic Sum --dimensions Name=FileSystemId,Value=${FILE_SYSTEM_ID} --period 60 --evaluation-periods 5 --threshold ${permitted_throughput:0:-2} --comparison-operator LessThanThreshold --treat-missing-data missing --region ${region}\n",
                     "result=$?\n",
                     "if [ $result -ne 0 ]; then\n",
                     "   aws sns publish --topic-arn ${SNS_ARN} --region ${region} --message 'Amazon EFS burst credit balance CloudWatch alarm error. Check CloudWatch alarms for file system '${FILE_SYSTEM_ID}'.'\n",
@@ -482,12 +569,12 @@ Resources:
                     "   else\n",
                     "   aws sns publish --topic-arn ${SNS_ARN} --region ${region} --message 'Amazon EFS burst credit balance CloudWatch alarm error. Check CloudWatch alarms for file system '${FILE_SYSTEM_ID}'.'\n",
                     "fi\n",
-                    "\n"                    
-                  ]
+                    "\n",
+                  ],
                 ]
               mode: 000777
               owner: root
-              group: root             
+              group: root
     Properties:
       BlockDeviceMappings:
         - DeviceName: /dev/xvda
@@ -496,45 +583,60 @@ Resources:
             VolumeSize: 10
             VolumeType: gp2
       IamInstanceProfile: !Ref InstanceProfile
-      ImageId: !FindInMap [ RegionMap, !Ref 'AWS::Region', AMI ]
+      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
       InstanceMonitoring: true
       InstanceType: !Ref InstanceType
       KeyName: !Ref EC2KeyName
       SecurityGroups:
-      - !Ref SecurityGroup
+        - !Ref SecurityGroup
       UserData:
-        "Fn::Base64":
-          !Sub |
-            #cloud-config
-            repo_update: true
-            repo_upgrade: all
+        'Fn::Base64': !Sub |
+          #cloud-config
+          repo_update: true
+          repo_upgrade: all
 
-            packages:
+          packages:
 
-            runcmd:
-            - ntpstat
-            - /opt/aws/bin/cfn-init --configsets set_cloudwatch_alarms --verbose --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
-            - /tmp/set-cloudwatch-alarms.sh ${ElasticFileSystem} ${WarningThreshold} ${CriticalThreshold} ${SNSTopic}
-  SNSTopic: 
+          runcmd:
+          - ntpstat
+          - /opt/aws/bin/cfn-init --configsets set_cloudwatch_alarms --verbose --stack ${AWS::StackName} --resource LaunchConfiguration --region ${AWS::Region}
+          - /tmp/set-cloudwatch-alarms.sh ${ElasticFileSystem} ${WarningThreshold} ${CriticalThreshold} ${SNSTopic}
+  SNSTopic:
     Type: AWS::SNS::Topic
-    Properties: 
-      DisplayName: !Join [ '', [ !Ref ElasticFileSystem, '-alarm-notification' ] ]
+    Properties:
+      DisplayName: !Join ['', [!Ref ElasticFileSystem, '-alarm-notification']]
       Subscription:
-      - Endpoint: !Ref EmailAddress
-        Protocol: "email"
-      TopicName: !Join [ '', [ !Ref ElasticFileSystem, '-alarm-notification' ] ]
+        - Endpoint: !Ref EmailAddress
+          Protocol: 'email'
+      TopicName: !Join ['', [!Ref ElasticFileSystem, '-alarm-notification']]
   WarningAlarm:
     Type: AWS::CloudWatch::Alarm
     DependsOn: CriticalAlarm
     Properties:
       AlarmActions:
-      - !Ref SNSTopic
-      AlarmDescription: !Join [ '', [ !Ref ElasticFileSystem, ' burst credit balance - Warning - ',  !Ref 'AWS::StackName' ] ]
-      AlarmName: !Join [ '', [ !Ref ElasticFileSystem, ' burst credit balance - Warning - ',  !Ref 'AWS::StackName' ] ]
+        - !Ref SNSTopic
+      AlarmDescription:
+        !Join [
+          '',
+          [
+            !Ref ElasticFileSystem,
+            ' burst credit balance - Warning - ',
+            !Ref 'AWS::StackName',
+          ],
+        ]
+      AlarmName:
+        !Join [
+          '',
+          [
+            !Ref ElasticFileSystem,
+            ' burst credit balance - Warning - ',
+            !Ref 'AWS::StackName',
+          ],
+        ]
       ComparisonOperator: LessThanThreshold
       Dimensions:
-      - Name: FileSystemId
-        Value: !Ref ElasticFileSystem
+        - Name: FileSystemId
+          Value: !Ref ElasticFileSystem
       EvaluationPeriods: 10
       MetricName: BurstCreditBalance
       Namespace: AWS/EFS

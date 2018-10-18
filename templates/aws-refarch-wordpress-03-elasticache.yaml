@@ -1,14 +1,13 @@
----
 AWSTemplateFormatVersion: 2010-09-09
 
 Description: Reference Architecture to host WordPress on AWS - Creates ElastiCache cache cluster
 
 Metadata:
-
   Authors:
     Description: Darryl Osborne (darrylo@amazon.com)
   License:
-    Description: 'Copyright 2018 Amazon.com, Inc. and its affiliates. All Rights Reserved.
+    Description:
+      'Copyright 2018 Amazon.com, Inc. and its affiliates. All Rights Reserved.
       Licensed under the Amazon Software License (the "License"). You may not use this file
       except in compliance with the License. A copy of the License is located at
       http://aws.amazon.com/asl/
@@ -18,13 +17,13 @@ Metadata:
 
   AWS::CloudFormation::Interface:
     ParameterGroups:
-    - Label:
-        default: Cache Parameters
-      Parameters:
-        - ElastiCacheNodeType
-        - ElastiCacheSecurityGroup
-        - NumberOfSubnets
-        - Subnet
+      - Label:
+          default: Cache Parameters
+        Parameters:
+          - ElastiCacheNodeType
+          - ElastiCacheSecurityGroup
+          - NumberOfSubnets
+          - Subnet
     ParameterLabels:
       ElastiCacheNodeType:
         default: Cache Cluster Node Type
@@ -36,7 +35,6 @@ Metadata:
         default: Subnets
 
 Parameters:
-
   ElastiCacheNodeType:
     AllowedValues:
       - cache.t2.micro
@@ -71,32 +69,25 @@ Parameters:
     Type: AWS::EC2::SecurityGroup::Id
   NumberOfSubnets:
     AllowedValues:
-    - 2
-    - 3
-    - 4
-    - 5
-    - 6
+      - 2
+      - 3
+      - 4
+      - 5
+      - 6
     Default: 3
     Description: Number of subnets. This must match your selections in the list of subnets below.
-    Type: String 
+    Type: String
   Subnet:
     Description: Select existing subnets. The number selected must match the number of subnets above. Subnets selected must be in separate AZs.
     Type: List<AWS::EC2::Subnet::Id>
 
 Conditions:
-
-  NumberOfSubnets1:
-      !Equals [ 1, !Ref NumberOfSubnets ]
-  NumberOfSubnets2:
-      !Equals [ 2, !Ref NumberOfSubnets ]
-  NumberOfSubnets3:
-      !Equals [ 3, !Ref NumberOfSubnets ]
-  NumberOfSubnets4:
-      !Equals [ 4, !Ref NumberOfSubnets ]
-  NumberOfSubnets5:
-      !Equals [ 5, !Ref NumberOfSubnets ]
-  NumberOfSubnets6:
-      !Equals [ 6, !Ref NumberOfSubnets ]
+  NumberOfSubnets1: !Equals [1, !Ref NumberOfSubnets]
+  NumberOfSubnets2: !Equals [2, !Ref NumberOfSubnets]
+  NumberOfSubnets3: !Equals [3, !Ref NumberOfSubnets]
+  NumberOfSubnets4: !Equals [4, !Ref NumberOfSubnets]
+  NumberOfSubnets5: !Equals [5, !Ref NumberOfSubnets]
+  NumberOfSubnets6: !Equals [6, !Ref NumberOfSubnets]
   Subnet0: !Or
     - !Condition NumberOfSubnets1
     - !Condition NumberOfSubnets2
@@ -125,7 +116,6 @@ Conditions:
   Subnet5: !Condition NumberOfSubnets6
 
 Resources:
-
   ElastiCacheCluster:
     Type: AWS::ElastiCache::CacheCluster
     Properties:
@@ -133,39 +123,60 @@ Resources:
       CacheNodeType: !Ref ElastiCacheNodeType
       CacheSubnetGroupName: !Ref ElastiCacheSubnetGroup
       Engine: memcached
-      NumCacheNodes:
-        !Ref NumberOfSubnets
+      NumCacheNodes: !Ref NumberOfSubnets
       Tags:
         - Key: Name
-          Value: !Join [ '', [ 'WordPress / ', !Ref 'AWS::StackName' ] ]
+          Value: !Join ['', ['WordPress / ', !Ref 'AWS::StackName']]
       VpcSecurityGroupIds:
-      - !Ref ElastiCacheSecurityGroup       
-  ElastiCacheSubnetGroup: 
+        - !Ref ElastiCacheSecurityGroup
+  ElastiCacheSubnetGroup:
     Type: AWS::ElastiCache::SubnetGroup
-    Properties: 
+    Properties:
       Description: ElastiCache Subnet Group for WordPress
-      SubnetIds: 
-        !If
-          [ NumberOfSubnets1,
-          [ !Select [ 0, !Ref Subnet ] ],
-          !If
-            [ NumberOfSubnets2,
-            [ !Select [ 0, !Ref Subnet ], !Select [ 1, !Ref Subnet ] ],
-            !If
-              [ NumberOfSubnets3,
-              [ !Select [ 0, !Ref Subnet ], !Select [ 1, !Ref Subnet ], !Select [ 2, !Ref Subnet ] ],
-              !If
-                [ NumberOfSubnets4,
-                [ !Select [ 0, !Ref Subnet ], !Select [ 1, !Ref Subnet ], !Select [ 2, !Ref Subnet ], !Select [ 3, !Ref Subnet ] ],
-                !If
-                  [ NumberOfSubnets5,
-                  [ !Select [ 0, !Ref Subnet ], !Select [ 1, !Ref Subnet ], !Select [ 2, !Ref Subnet ], !Select [ 3, !Ref Subnet ], !Select [ 4, !Ref Subnet ] ],
-                  [ !Select [ 0, !Ref Subnet ], !Select [ 1, !Ref Subnet ], !Select [ 2, !Ref Subnet ], !Select [ 3, !Ref Subnet ], !Select [ 4, !Ref Subnet ], !Select [ 5, !Ref Subnet ] ]
-                  ]
-                ]
-              ]
-            ]
-          ]
+      SubnetIds:
+        !If [
+          NumberOfSubnets1,
+          [!Select [0, !Ref Subnet]],
+          !If [
+            NumberOfSubnets2,
+            [!Select [0, !Ref Subnet], !Select [1, !Ref Subnet]],
+            !If [
+              NumberOfSubnets3,
+              [
+                !Select [0, !Ref Subnet],
+                !Select [1, !Ref Subnet],
+                !Select [2, !Ref Subnet],
+              ],
+              !If [
+                NumberOfSubnets4,
+                [
+                  !Select [0, !Ref Subnet],
+                  !Select [1, !Ref Subnet],
+                  !Select [2, !Ref Subnet],
+                  !Select [3, !Ref Subnet],
+                ],
+                !If [
+                  NumberOfSubnets5,
+                  [
+                    !Select [0, !Ref Subnet],
+                    !Select [1, !Ref Subnet],
+                    !Select [2, !Ref Subnet],
+                    !Select [3, !Ref Subnet],
+                    !Select [4, !Ref Subnet],
+                  ],
+                  [
+                    !Select [0, !Ref Subnet],
+                    !Select [1, !Ref Subnet],
+                    !Select [2, !Ref Subnet],
+                    !Select [3, !Ref Subnet],
+                    !Select [4, !Ref Subnet],
+                    !Select [5, !Ref Subnet],
+                  ],
+                ],
+              ],
+            ],
+          ],
+        ]
 Outputs:
   ElastiCacheClusterEndpointAddress:
     Value: !GetAtt ElastiCacheCluster.ConfigurationEndpoint.Address

@@ -98,7 +98,7 @@ Resources:
       DashboardBody:
         {"Fn::Join":
           [ "",
-          [ 
+          [
             '{"widgets": [
                   {
                       "type": "metric",
@@ -326,7 +326,7 @@ Resources:
       DashboardBody:
         {"Fn::Join":
           [ "",
-          [ 
+          [
             '{"widgets": [
                   {
                       "type": "metric",
