@@ -51,10 +51,6 @@ Parameters:
     Description: '[Optional] Route53 Hosted Zone ID'
     Type: AWS::Route53::HostedZone::Id
 
-Conditions:
-  UseExistingRecordSet: !Not [!Equals ['', !Ref ExistingRoute53Domain]]
-  DontUseExistingRecordSet: !Equals ['', !Ref ExistingRoute53Domain]]
-
 Resources:
   NewRecordSet:
     Condition: DontUseExistingRecordSet
