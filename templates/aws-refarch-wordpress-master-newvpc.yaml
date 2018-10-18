@@ -789,9 +789,9 @@ Parameters:
     Description: '[ Optional ] The main domain name of the WordPress site (e.g. example.com).'
     Type: String
   WPLocale:
-    Description: "The main language of the WordPress site, as per https://codex.WordPress.org/Installing_WordPress_in_Your_Language. The default is 'en_GB'."
+    Description: "The main language of the WordPress site, as per https://codex.WordPress.org/Installing_WordPress_in_Your_Language. The default is 'en_US'."
     Type: String
-    Default: en_GB
+    Default: en_US
   WPTitle:
     Default: This is a new WordPress site on Amazon Web Services
     AllowedPattern: ^([a-zA-Z0-9])([a-zA-Z0-9 _-]*)([a-zA-Z0-9])$
@@ -1103,7 +1103,7 @@ Resources:
           ]
         WPDomainName: !Ref WPDomainName
       TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-05-route53-acm.yaml'
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-05-route53.yaml'
         - { S3BucketURL: !Ref S3BucketURL }
   route53existing:
     Condition: UseExistingRecordSet
@@ -1126,7 +1126,7 @@ Resources:
           ]
         WPDomainName: !Ref WPDomainName
       TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-05-route53-acm.yaml'
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-05-route53.yaml'
         - { S3BucketURL: !Ref S3BucketURL }
   securitygroups:
     Condition: AvailableAWSRegion
