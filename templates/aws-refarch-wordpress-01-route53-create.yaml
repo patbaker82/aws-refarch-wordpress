@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Create New Zone
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: DNS Configuration
+        Parameters:
+          - DomainName
+    ParameterLabels:
+      DomainName:
+        default: Domain Name
+Parameters:
+  DomainName:
+    Description: >-
+      Domain Name configured for the cluster
+    Type: String
+    Default: ''
+Resources:
+  CreateZone:
+    Type: 'AWS::Route53::HostedZone'
+    Properties:
+      Name: !Ref DomainName
+Outputs:
+  HostedZoneId:
+    Value: !Ref CreateZone

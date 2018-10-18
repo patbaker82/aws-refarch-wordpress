@@ -23,10 +23,8 @@ Metadata:
           - SshAccessCidr
           - AdminEmail
           - WPDomainName
-          - UseRoute53Boolean
           - ExistingRoute53Domain
           - UseCloudFrontBoolean
-          - CloudFrontAcmCertificate
           - S3BucketURL
       - Label:
           default: Network
@@ -74,7 +72,6 @@ Metadata:
       - Label:
           default: Web Tier
         Parameters:
-          - PublicAlbAcmCertificate
           - PHPVersion
           - PHPIniOverride
           - WebInstanceType
@@ -94,8 +91,6 @@ Metadata:
         default: S3 location of cloud formation
       BastionInstanceType:
         default: Bastion Instance Type
-      CloudFrontAcmCertificate:
-        default: CloudFront Certificate ARN
       DatabaseCmk:
         default: AWS KMS CMK for RDS
       DatabaseEncrpytedBoolean:
@@ -132,16 +127,12 @@ Metadata:
         default: EC2 Key Pair
       PHPIniOverride:
         default: AWS php.ini Overrides
-      PublicAlbAcmCertificate:
-        default: ALB Certificate ARN
       SshAccessCidr:
         default: SSH Access From
       UseElastiCacheBoolean:
         default: Cache Cluster (ElastiCache)
       UseCloudFrontBoolean:
         default: CDN (CloudFront)
-      UseRoute53Boolean:
-        default: DNS record set (Route53)
       ExistingRoute53Domain:
         default: Hosted Zone ID
       WebAsgMax:
@@ -294,10 +285,6 @@ Parameters:
   S3BucketURL:
     Description: S3 Bucket URL
     Type: String
-  CloudFrontAcmCertificate:
-    AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
-    Description: '[ Optional ] The AWS Certification Manager certificate ARN for the CloudFront distribution certificate - this certificate should be created in the us-east-1 (N. Virginia) region and must reference the WordPress domain name you use below.'
-    Type: String
   DatabaseCmk:
     Description: AWS KMS Customer Master Key (CMK) to encrypt database cluster
     Type: String
@@ -305,7 +292,7 @@ Parameters:
     AllowedValues:
       - true
       - false
-    Default: true
+    Default: false
     Description: Indicates whether the DB instances in the cluster are encrypted.
     Type: String
   DatabaseInstanceType:
@@ -324,7 +311,7 @@ Parameters:
       - db.r4.8xlarge
       - db.r4.16xlarge
     ConstraintDescription: Must be a valid RDS instance class.
-    Default: db.t2.medium
+    Default: db.t2.small
     Description: The Amazon RDS database instance class.
     Type: String
   DatabaseMasterUsername:
@@ -445,7 +432,7 @@ Parameters:
     AllowedValues:
       - true
       - false
-    Default: true
+    Default: false
     Description: Create an encrypted Amazon EFS file system.
     Type: String
   EfsCmk:
@@ -565,7 +552,7 @@ Parameters:
       - p3.8xlarge
       - p3.16xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
-    Default: r4.large
+    Default: t2.nano
     Description: The Amazon EC2 instance type that adds data to the file system.
     Type: String
   EfsPerformanceMode:
@@ -601,7 +588,7 @@ Parameters:
       - cache.r3.4xlarge
       - cache.r3.8xlarge
     ConstraintDescription: Must be a valid Amazon ElastiCache node type.
-    Default: cache.t2.medium
+    Default: cache.t2.micro
     Description: The Amazon ElastiCache cluster node type.
     Type: String
   EC2KeyName:
@@ -619,10 +606,6 @@ Parameters:
     Default: 7.0
     Description: The version of PHP to install.
     Type: String
-  PublicAlbAcmCertificate:
-    AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
-    Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the WordPress domain name you use below.'
-    Type: String
   SshAccessCidr:
     AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
     Description: The CIDR IP range that is permitted to SSH to bastion instance. Note - a value of 0.0.0.0/0 will allow access from ANY IP address.
@@ -639,18 +622,11 @@ Parameters:
     AllowedValues:
       - true
       - false
-    Default: true
+    Default: false
     Description: Specifies whether an ElastiCache Cache Cluster should be created to cache WordPress database content.
     Type: String
-  UseRoute53Boolean:
-    AllowedValues:
-      - true
-      - false
-    Default: true
-    Description: Specifies whether a record set should be created in Route 53 for your WordPress domain name.
-    Type: String
   ExistingRoute53Domain:
-    Description: '[Optional] Existing Route53 Hosted Zone ID'
+    Description: '[Optional] Existing Route53 Hosted Zone ID.  A new zone will be created if not specified'
     Type: AWS::Route53::HostedZone::Id
   WebAsgMax:
     AllowedPattern: ^((?!0$)[1-2]?[0-9]|30)$
@@ -786,7 +762,7 @@ Parameters:
     Type: String
   WPDomainName:
     AllowedPattern: ^$|(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$
-    Description: '[ Optional ] The main domain name of the WordPress site (e.g. example.com).'
+    Description: 'The main domain name of the WordPress site (e.g. example.com).'
     Type: String
   WPLocale:
     Description: "The main language of the WordPress site, as per https://codex.WordPress.org/Installing_WordPress_in_Your_Language. The default is 'en_US'."
@@ -901,26 +877,21 @@ Conditions:
       !Equals [!Ref 'AWS::Region', us-east-2],
       !Equals [!Ref 'AWS::Region', us-west-2],
     ]
-  EfsCreateAlarms: !Equals [true, !Ref EfsCreateAlarms]
-  EfsCreateNoAlarms: !Equals [false, !Ref EfsCreateAlarms]
-  CreateRecordSet: !And
-    - !Equals [true, !Ref UseRoute53Boolean]
-    - !Equals ['', !Ref ExistingRoute53Domain]
-    - !Condition AvailableAWSRegion
-  UseExistingRecordSet: !And
-    - !Equals [true, !Ref UseRoute53Boolean]
-    - !Not [!Equals ['', !Ref ExistingRoute53Domain]]
-    - !Condition AvailableAWSRegion
+  EfsCreateAlarms: !Equals [!Ref EfsCreateAlarms, true]
+  EfsCreateNoAlarms: !Equals [!Ref EfsCreateAlarms, false]
   DeployCloudFront: !And
-    - !Equals [true, !Ref UseCloudFrontBoolean]
+    - !Equals [!Ref UseCloudFrontBoolean, true]
     - !Condition AvailableAWSRegion
   DeployElastiCache: !And
-    - !Equals [true, !Ref UseElastiCacheBoolean]
+    - !Equals [!Ref UseElastiCacheBoolean, true]
     - !Condition AvailableAWSRegion
+  CreateNewZone: !And
+    - !Equals [!Ref ExistingRoute53Domain, '']
+    - !Condition AvailableAWSRegion
+
 Resources:
   bastion:
     Condition: AvailableAWSRegion
-    DependsOn: [newvpc, securitygroups]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -935,11 +906,10 @@ Resources:
         - { S3BucketURL: !Ref S3BucketURL }
   cloudfront:
     Condition: DeployCloudFront
-    DependsOn: [publicalb, web]
+    DependsOn: web
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        CloudFrontAcmCertificate: !Ref CloudFrontAcmCertificate
         PublicAlbDnsName: !GetAtt [publicalb, Outputs.PublicAlbDnsName]
         WPDomainName: !Ref WPDomainName
       TemplateURL: !Sub
@@ -947,8 +917,7 @@ Resources:
         - { S3BucketURL: !Ref S3BucketURL }
   dashboardwithalarms:
     Condition: EfsCreateAlarms
-    DependsOn:
-      [newvpc, securitygroups, publicalb, efsfilesystem, rds, efsalarms]
+    DependsOn: [newvpc, securitygroups]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -967,7 +936,7 @@ Resources:
         - { S3BucketURL: !Ref S3BucketURL }
   dashboardwithnoalarms:
     Condition: EfsCreateNoAlarms
-    DependsOn: [newvpc, securitygroups, publicalb, efsfilesystem, rds]
+    DependsOn: [newvpc, securitygroups]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -979,7 +948,6 @@ Resources:
         - '${S3BucketURL}/templates/aws-refarch-wordpress-06-dashboard.yaml'
         - { S3BucketURL: !Ref S3BucketURL }
   efsfilesystem:
-    DependsOn: [newvpc, securitygroups]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -997,7 +965,6 @@ Resources:
         - { S3BucketURL: !Ref S3BucketURL }
   efsalarms:
     Condition: EfsCreateAlarms
-    DependsOn: [efsfilesystem]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -1015,7 +982,6 @@ Resources:
         - { S3BucketURL: !Ref S3BucketURL }
   elasticache:
     Condition: DeployElastiCache
-    DependsOn: [newvpc, securitygroups]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -1051,13 +1017,12 @@ Resources:
         - { S3BucketURL: !Ref S3BucketURL }
   publicalb:
     Condition: AvailableAWSRegion
-    DependsOn: [newvpc, securitygroups]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
         NumberOfSubnets: !Ref NumberOfAZs
         Subnet: !GetAtt [newvpc, Outputs.PublicSubnet]
-        PublicAlbAcmCertificate: !Ref PublicAlbAcmCertificate
+        PublicAlbAcmCertificate: !GetAtt [acm, Outputs.ACMCertificate]
         PublicAlbSecurityGroup:
           !GetAtt [securitygroups, Outputs.PublicAlbSecurityGroup]
         Vpc: !GetAtt [newvpc, Outputs.Vpc]
@@ -1066,7 +1031,6 @@ Resources:
         - { S3BucketURL: !Ref S3BucketURL }
   rds:
     Condition: AvailableAWSRegion
-    DependsOn: [newvpc, securitygroups]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -1083,12 +1047,39 @@ Resources:
       TemplateURL: !Sub
         - '${S3BucketURL}/templates/aws-refarch-wordpress-03-rds.yaml'
         - { S3BucketURL: !Ref S3BucketURL }
+
+  route53createzone:
+    Condition: CreateNewZone
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        DomainName: !Ref WPDomainName
+      TemplateURL: !Sub
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-01-route53-create.yaml'
+        - { S3BucketURL: !Ref S3BucketURL }
+
+  acm:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        DomainName: !Ref WPDomainName
+        HostedZoneId: !If
+          - CreateNewZone
+          - !GetAtt [route53createzone, Outputs.HostedZoneId]
+          - !Ref ExistingRoute53Domain
+      TemplateURL: !Sub
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-02-acm.yaml'
+        - { S3BucketURL: !Ref S3BucketURL }
+
   route53:
-    Condition: CreateRecordSet
-    DependsOn: [publicalb, web]
+    DependsOn: web
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
+        HostedZoneId: !If
+          - CreateNewZone
+          - !GetAtt [route53createzone, Outputs.HostedZoneId]
+          - !Ref ExistingRoute53Domain
         DnsEndpoint:
           !If [
             DeployCloudFront,
@@ -1103,34 +1094,11 @@ Resources:
           ]
         WPDomainName: !Ref WPDomainName
       TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-05-route53.yaml'
+        - '${S3BucketURL}/templates/aws-refarch-wordpress-02-route53.yaml'
         - { S3BucketURL: !Ref S3BucketURL }
-  route53existing:
-    Condition: UseExistingRecordSet
-    DependsOn: [publicalb, web]
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        HostedZoneId: !Ref ExistingRoute53Domain
-        DnsEndpoint:
-          !If [
-            DeployCloudFront,
-            !GetAtt [cloudfront, Outputs.DnsEndpoint],
-            !GetAtt [publicalb, Outputs.PublicAlbDnsName],
-          ]
-        DnsHostId:
-          !If [
-            DeployCloudFront,
-            'Z2FDTNDATAQYW2',
-            !GetAtt [publicalb, Outputs.PublicAlbCanonicalHostedZoneId],
-          ]
-        WPDomainName: !Ref WPDomainName
-      TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-05-route53.yaml'
-        - { S3BucketURL: !Ref S3BucketURL }
+
   securitygroups:
     Condition: AvailableAWSRegion
-    DependsOn: newvpc
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -1139,9 +1107,9 @@ Resources:
       TemplateURL: !Sub
         - '${S3BucketURL}/templates/aws-refarch-wordpress-02-securitygroups.yaml'
         - { S3BucketURL: !Ref S3BucketURL }
+
   web:
     Condition: AvailableAWSRegion
-    DependsOn: [efsfilesystem, newvpc, publicalb, securitygroups]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -1189,31 +1157,8 @@ Outputs:
       ]
   WPSiteUrl:
     Description: The URL of the WordPress site
-    Value:
-      !If [
-        CreateRecordSet,
-        !Join ['', ['http://www.', !Ref WPDomainName]],
-        !If [
-          DeployCloudFront,
-          !GetAtt [cloudfront, Outputs.DnsHostname],
-          !GetAtt [publicalb, Outputs.PublicAlbHostname],
-        ],
-      ]
+    Value: !Join ['', ['https://www.', !Ref WPDomainName]]
   OpCacheValidationUrl:
     Description: A page to validate OpCache has been enabled for each instance in the ASG. Refresh the page to see the status of each instance in the ASG.
     Value:
-      !Join [
-        '',
-        [
-          !If [
-            CreateRecordSet,
-            !Join ['', ['http://www.', !Ref WPDomainName]],
-            !If [
-              DeployCloudFront,
-              !GetAtt [cloudfront, Outputs.DnsHostname],
-              !GetAtt [publicalb, Outputs.PublicAlbHostname],
-            ],
-          ],
-          '/opcache-instanceid.php',
-        ],
-      ]
+      !Join ['', ['https://www.', !Ref WPDomainName, '/opcache-instanceid.php']]
