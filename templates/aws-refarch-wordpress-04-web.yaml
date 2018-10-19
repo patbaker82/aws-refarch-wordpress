@@ -375,7 +375,7 @@ Mappings:
     us-west-1:
       AMI: ami-a51f27c5
     us-west-2:
-      AMI: ami-bf4193c7
+      AMI: ami-a0cfeed8
 
 Resources:
   WebInstanceProfile:
