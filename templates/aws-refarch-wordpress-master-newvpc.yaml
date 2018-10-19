@@ -25,7 +25,8 @@ Metadata:
           - WPDomainName
           - ExistingRoute53Domain
           - UseCloudFrontBoolean
-          - S3BucketURL
+          - S3Bucket
+          - S3Key
       - Label:
           default: Network
         Parameters:
@@ -87,8 +88,10 @@ Metadata:
           - WPDirectory
           - WPLocale
     ParameterLabels:
-      S3BucketURL:
-        default: S3 location of cloud formation
+      S3Bucket:
+        default: Bucket where the cloudformation script are stored
+      S3Key:
+        default: 'S3 Key loation'
       BastionInstanceType:
         default: Bastion Instance Type
       DatabaseCmk:
@@ -187,6 +190,12 @@ Metadata:
         default: Data Subnet 2
 
 Parameters:
+  S3Bucket:
+    Type: String
+    Description: Bucket name
+  S3Key:
+    Type: String
+    Description: '[OPTIONAL] S3Key.  Must end in /'
   BastionInstanceType:
     AllowedValues:
       - t2.nano
@@ -281,9 +290,6 @@ Parameters:
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
     Default: t2.nano
     Description: Bastion EC2 instance type.
-    Type: String
-  S3BucketURL:
-    Description: S3 Bucket URL
     Type: String
   DatabaseCmk:
     Description: AWS KMS Customer Master Key (CMK) to encrypt database cluster
@@ -596,7 +602,7 @@ Parameters:
     Description: Name of an EC2 KeyPair. Your bastion & Web instances will launch with this KeyPair.
     Type: AWS::EC2::KeyPair::KeyName
   PHPIniOverride:
-    Description: Full Amazon S3 https path to a php.ini override file (e.g. https://s3.amazonaws.com/aws-refarch/wordpress/latest/bits/20-aws.ini)
+    Description: '[OPTIONAL] Full Amazon S3 https path to a php.ini override file (e.g. https://s3.amazonaws.com/aws-refarch/wordpress/latest/bits/20-aws.ini)'
     Type: String
   PHPVersion:
     AllowedValues:
@@ -901,9 +907,7 @@ Resources:
         EC2KeyName: !Ref EC2KeyName
         NumberOfSubnets: !Ref NumberOfAZs
         Subnet: !GetAtt [newvpc, Outputs.PublicSubnet]
-      TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-03-bastion.yaml'
-        - { S3BucketURL: !Ref S3BucketURL }
+      TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-03-bastion.yaml'
   cloudfront:
     Condition: DeployCloudFront
     DependsOn: web
@@ -912,9 +916,7 @@ Resources:
       Parameters:
         PublicAlbDnsName: !GetAtt [publicalb, Outputs.PublicAlbDnsName]
         WPDomainName: !Ref WPDomainName
-      TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-04-cloudfront.yaml'
-        - { S3BucketURL: !Ref S3BucketURL }
+      TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-04-cloudfront.yaml'
   dashboardwithalarms:
     Condition: EfsCreateAlarms
     DependsOn: [newvpc, securitygroups]
@@ -931,9 +933,7 @@ Resources:
         WarningAlarmArn: !GetAtt [efsalarms, Outputs.WarningAlarmArn]
         PublicAlbFullName: !GetAtt [publicalb, Outputs.PublicAlbFullName]
         EfsCreateAlarms: !Ref EfsCreateAlarms
-      TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-06-dashboard.yaml'
-        - { S3BucketURL: !Ref S3BucketURL }
+      TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-06-dashboard.yaml'
   dashboardwithnoalarms:
     Condition: EfsCreateNoAlarms
     DependsOn: [newvpc, securitygroups]
@@ -944,9 +944,7 @@ Resources:
         DatabaseCluster: !GetAtt [rds, Outputs.DatabaseCluster]
         PublicAlbFullName: !GetAtt [publicalb, Outputs.PublicAlbFullName]
         EfsCreateAlarms: !Ref EfsCreateAlarms
-      TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-06-dashboard.yaml'
-        - { S3BucketURL: !Ref S3BucketURL }
+      TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-06-dashboard.yaml'
   efsfilesystem:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -960,9 +958,7 @@ Resources:
         NumberOfSubnets: !Ref NumberOfAZs
         PerformanceMode: !Ref EfsPerformanceMode
         Subnet: !GetAtt [newvpc, Outputs.DataSubnet]
-      TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-03-efsfilesystem.yaml'
-        - { S3BucketURL: !Ref S3BucketURL }
+      TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-03-efsfilesystem.yaml'
   efsalarms:
     Condition: EfsCreateAlarms
     Type: AWS::CloudFormation::Stack
@@ -977,9 +973,7 @@ Resources:
         NumberOfSubnets: !Ref NumberOfAZs
         Subnet: !GetAtt [newvpc, Outputs.DataSubnet]
         WarningThreshold: !Ref EfsWarningThreshold
-      TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-03-efsalarms.yaml'
-        - { S3BucketURL: !Ref S3BucketURL }
+      TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-03-efsalarms.yaml'
   elasticache:
     Condition: DeployElastiCache
     Type: AWS::CloudFormation::Stack
@@ -990,9 +984,7 @@ Resources:
         ElastiCacheSecurityGroup:
           !GetAtt [securitygroups, Outputs.ElastiCacheSecurityGroup]
         NumberOfSubnets: !Ref NumberOfAZs
-      TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-03-elasticache.yaml'
-        - { S3BucketURL: !Ref S3BucketURL }
+      TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-03-elasticache.yaml'
   newvpc:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -1012,9 +1004,7 @@ Resources:
         DataSubnet0Cidr: !Ref DataSubnet0Cidr
         DataSubnet1Cidr: !Ref DataSubnet1Cidr
         DataSubnet2Cidr: !Ref DataSubnet2Cidr
-      TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-01-newvpc.yaml'
-        - { S3BucketURL: !Ref S3BucketURL }
+      TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-01-newvpc.yaml'
   publicalb:
     Condition: AvailableAWSRegion
     Type: AWS::CloudFormation::Stack
@@ -1026,9 +1016,7 @@ Resources:
         PublicAlbSecurityGroup:
           !GetAtt [securitygroups, Outputs.PublicAlbSecurityGroup]
         Vpc: !GetAtt [newvpc, Outputs.Vpc]
-      TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-03-publicalb.yaml'
-        - { S3BucketURL: !Ref S3BucketURL }
+      TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-03-publicalb.yaml'
   rds:
     Condition: AvailableAWSRegion
     Type: AWS::CloudFormation::Stack
@@ -1044,9 +1032,7 @@ Resources:
           !GetAtt [securitygroups, Outputs.DatabaseSecurityGroup]
         Subnet: !GetAtt [newvpc, Outputs.DataSubnet]
         NumberOfSubnets: !Ref NumberOfAZs
-      TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-03-rds.yaml'
-        - { S3BucketURL: !Ref S3BucketURL }
+      TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-03-rds.yaml'
 
   route53createzone:
     Condition: CreateNewZone
@@ -1054,22 +1040,20 @@ Resources:
     Properties:
       Parameters:
         DomainName: !Ref WPDomainName
-      TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-01-route53-create.yaml'
-        - { S3BucketURL: !Ref S3BucketURL }
+      TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-01-route53-create.yaml'
 
   acm:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
+        LambdaZipsBucketName: !Ref S3Bucket
+        QSS3KeyPrefix: !Ref S3Key
         DomainName: !Ref WPDomainName
         HostedZoneId: !If
           - CreateNewZone
           - !GetAtt [route53createzone, Outputs.HostedZoneId]
           - !Ref ExistingRoute53Domain
-      TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-02-acm.yaml'
-        - { S3BucketURL: !Ref S3BucketURL }
+      TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-02-acm.yaml'
 
   route53:
     DependsOn: web
@@ -1093,9 +1077,7 @@ Resources:
             !GetAtt [publicalb, Outputs.PublicAlbCanonicalHostedZoneId],
           ]
         WPDomainName: !Ref WPDomainName
-      TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-02-route53.yaml'
-        - { S3BucketURL: !Ref S3BucketURL }
+      TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-02-route53.yaml'
 
   securitygroups:
     Condition: AvailableAWSRegion
@@ -1104,9 +1086,7 @@ Resources:
       Parameters:
         SshAccessCidr: !Ref SshAccessCidr
         Vpc: !GetAtt [newvpc, Outputs.Vpc]
-      TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-02-securitygroups.yaml'
-        - { S3BucketURL: !Ref S3BucketURL }
+      TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-02-securitygroups.yaml'
 
   web:
     Condition: AvailableAWSRegion
@@ -1140,9 +1120,7 @@ Resources:
         WPLocale: !Ref WPLocale
         WPTitle: !Ref WPTitle
         WPVersion: !Ref WPVersion
-      TemplateURL: !Sub
-        - '${S3BucketURL}/templates/aws-refarch-wordpress-04-web.yaml'
-        - { S3BucketURL: !Ref S3BucketURL }
+      TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-04-web.yaml'
 Outputs:
   StackStatus:
     Description: Master Stack Status
