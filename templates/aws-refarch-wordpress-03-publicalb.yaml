@@ -63,14 +63,11 @@ Parameters:
     Type: AWS::EC2::VPC::Id
 
 Conditions:
-  SslCertificate: !Not [!Equals ['', !Ref PublicAlbAcmCertificate]]
-  NoSslCertificate: !Equals ['', !Ref PublicAlbAcmCertificate]
   NumberOfSubnets1: !Equals [1, !Ref NumberOfSubnets]
   NumberOfSubnets2: !Equals [2, !Ref NumberOfSubnets]
   NumberOfSubnets3: !Equals [3, !Ref NumberOfSubnets]
   NumberOfSubnets4: !Equals [4, !Ref NumberOfSubnets]
   NumberOfSubnets5: !Equals [5, !Ref NumberOfSubnets]
-
 Resources:
   PublicAlbListenerSslCertificate:
     Condition: SslCertificate
@@ -165,10 +162,4 @@ Outputs:
     Value: !GetAtt PublicApplicationLoadBalancer.LoadBalancerFullName
   PublicAlbHostname:
     Value:
-      !If [
-        NoSslCertificate,
-        !Join ['', ['http://', !GetAtt PublicApplicationLoadBalancer.DNSName]],
-        !Join ['', ['https://', !GetAtt PublicApplicationLoadBalancer.DNSName]],
-      ]
-  SslCertificate:
-    Value: !If [SslCertificate, True, False]
+      !Join ['', ['https://', !GetAtt PublicApplicationLoadBalancer.DNSName]]

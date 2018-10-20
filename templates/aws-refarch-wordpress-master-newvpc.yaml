@@ -1216,7 +1216,6 @@ Resources:
         PublicAlbTargetGroupArn:
           !GetAtt [publicalb, Outputs.PublicAlbTargetGroupArn]
         PublicAlbHostname: !GetAtt [publicalb, Outputs.PublicAlbHostname]
-        SslCertificate: !GetAtt [publicalb, Outputs.SslCertificate]
         WebAsgMax: !Ref WebAsgMax
         WebAsgMin: !Ref WebAsgMin
         WebInstanceType: !Ref WebInstanceType
