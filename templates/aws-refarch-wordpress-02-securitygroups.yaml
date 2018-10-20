@@ -129,6 +129,17 @@ Resources:
           SourceSecurityGroupId: !Ref BastionSecurityGroup
       VpcId: !Ref Vpc
 
+  NatSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for nat instances
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          SourceSecurityGroupId: !Ref BastionSecurityGroup
+      VpcId: !Ref Vpc
+
 Outputs:
   BastionSecurityGroup:
     Value: !Ref BastionSecurityGroup
@@ -142,3 +153,5 @@ Outputs:
     Value: !Ref PublicAlbSecurityGroup
   WebSecurityGroup:
     Value: !Ref WebSecurityGroup
+  NatSecurityGroup:
+    Value: !Ref NatSecurityGroup

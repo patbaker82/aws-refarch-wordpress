@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: Reference Architecture to host WordPress on AWS - Creates bastion (desired:0; min:0; max:1) Auto Scaling group
+Description: Reference Architecture to host WordPress on AWS - Creates New VPC
 
 Metadata:
   Authors:
@@ -18,30 +18,45 @@ Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
       - Label:
-          default: AWS Parameters
+          default: Amazon VPC Parameters
         Parameters:
-          - EC2KeyName
-          - BastionInstanceType
-          - BastionSecurityGroup
           - NumberOfSubnets
           - Subnet
+          - NatInstanceType
+          - EC2KeyName
+          - NatSecurityGroup
     ParameterLabels:
-      BastionSecurityGroup:
-        default: Bastion Security Group
-      BastionInstanceType:
+      Subnet:
+        default: Subnets
+      NumberOfSubnets:
+        default: Number of subnets
+      NatInstanceType:
         default: Instance Type
       EC2KeyName:
         default: Existing Key Pair
-      NumberOfSubnets:
-        default: Number of subnets
-      Subnet:
-        default: Subnets
+      NatSecurityGroup:
+        default: Web Security Group
 
 Parameters:
-  BastionSecurityGroup:
-    Description: Select the bastion security group.
+  NatSecurityGroup:
+    Description: Select the web security group.
     Type: AWS::EC2::SecurityGroup::Id
-  BastionInstanceType:
+  EC2KeyName:
+    AllowedPattern: ^([a-zA-Z0-9 @.`~!#$%^&*()_+,\\-])*$
+    ConstraintDescription: Must be letters (upper or lower), numbers, and special characters.
+    Description: Name of an EC2 KeyPair. Your bastion & Web instances will launch with this KeyPair.
+    Type: AWS::EC2::KeyPair::KeyName
+  Subnet:
+    Description: Select existing subnets. The number selected must match the number of subnets above. Subnets selected must be in separate AZs.
+    Type: List<AWS::EC2::Subnet::Id>
+  NumberOfSubnets:
+    AllowedValues:
+      - 2
+      - 3
+    Default: 3
+    Description: Number of subnets. This must match your selections in the list of subnets below.
+    Type: String
+  NatInstanceType:
     AllowedValues:
       - t2.nano
       - t2.micro
@@ -50,6 +65,13 @@ Parameters:
       - t2.large
       - t2.xlarge
       - t2.2xlarge
+      - t3.nano
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+      - t3.xlarge
+      - t3.2xlarge
       - m3.medium
       - m3.large
       - m3.xlarge
@@ -134,76 +156,47 @@ Parameters:
       - p3.16xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
     Default: t2.nano
-    Description: Bastion EC2 instance type.
+    Description: The Amazon EC2 instance type for your nat instances.
     Type: String
-  EC2KeyName:
-    Description: Name of an EC2 KeyPair. Your bastion instances will launch with this KeyPair.
-    Type: AWS::EC2::KeyPair::KeyName
-  NumberOfSubnets:
-    AllowedValues:
-      - 2
-      - 3
-      - 4
-      - 5
-      - 6
-    Default: 3
-    Description: Number of subnets. This must match your selections in the list of subnets below.
-    Type: String
-  Subnet:
-    Description: Select existing subnets. The number selected must match the number of subnets above. Subnets selected must be in separate AZs.
-    Type: List<AWS::EC2::Subnet::Id>
+
+Mappings:
+  NatRegionMap:
+    us-east-1:
+      AMI: ami-184dc970
+    us-west-1:
+      AMI: ami-a98396ec
+    us-west-2:
+      AMI: ami-40d1f038
+    eu-west-1:
+      AMI: ami-14913f63
+    eu-central-1:
+      AMI: ami-ae380eb3
+    sa-east-1:
+      AMI: ami-8122969c
+    ap-southeast-1:
+      AMI: ami-6aa38238
+    ap-southeast-2:
+      AMI: ami-893f53b3
+    ap-northeast-1:
+      AMI: ami-27d6e626
 
 Conditions:
   NumberOfSubnets1: !Equals [1, !Ref NumberOfSubnets]
   NumberOfSubnets2: !Equals [2, !Ref NumberOfSubnets]
-  NumberOfSubnets3: !Equals [3, !Ref NumberOfSubnets]
-  NumberOfSubnets4: !Equals [4, !Ref NumberOfSubnets]
-  NumberOfSubnets5: !Equals [5, !Ref NumberOfSubnets]
-
-Mappings:
-  RegionMap:
-    ap-northeast-1:
-      AMI: ami-da9e2cbc
-    ap-northeast-2:
-      AMI: ami-1196317f
-    ap-south-1:
-      AMI: ami-d5c18eba
-    ap-southeast-1:
-      AMI: ami-c63d6aa5
-    ap-southeast-2:
-      AMI: ami-ff4ea59d
-    ca-central-1:
-      AMI: ami-d29e25b6
-    eu-central-1:
-      AMI: ami-bf2ba8d0
-    eu-west-1:
-      AMI: ami-1a962263
-    eu-west-2:
-      AMI: ami-e7d6c983
-    sa-east-1:
-      AMI: ami-286f2a44
-    us-east-1:
-      AMI: ami-55ef662f
-    us-east-2:
-      AMI: ami-15e9c770
-    us-west-1:
-      AMI: ami-a51f27c5
-    us-west-2:
-      AMI: ami-a0cfeed8
 
 Resources:
-  BastionAutoScalingGroup:
+  NatAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       Cooldown: '60'
       HealthCheckGracePeriod: 120
       HealthCheckType: EC2
-      LaunchConfigurationName: !Ref BastionLaunchConfiguration
-      MaxSize: '1'
-      MinSize: '0'
+      LaunchConfigurationName: !Ref NatLaunchConfiguration
+      MaxSize: '3'
+      MinSize: '1'
       Tags:
         - Key: Name
-          Value: !Join ['', ['Bastion / ', !Ref 'AWS::StackName']]
+          Value: !Join ['', ['NAT / ', !Ref 'AWS::StackName']]
           PropagateAtLaunch: true
       VPCZoneIdentifier:
         !If [
@@ -212,65 +205,65 @@ Resources:
           !If [
             NumberOfSubnets2,
             [!Select [0, !Ref Subnet], !Select [1, !Ref Subnet]],
-            !If [
-              NumberOfSubnets3,
-              [
-                !Select [0, !Ref Subnet],
-                !Select [1, !Ref Subnet],
-                !Select [2, !Ref Subnet],
-              ],
-              !If [
-                NumberOfSubnets4,
-                [
-                  !Select [0, !Ref Subnet],
-                  !Select [1, !Ref Subnet],
-                  !Select [2, !Ref Subnet],
-                  !Select [3, !Ref Subnet],
-                ],
-                !If [
-                  NumberOfSubnets5,
-                  [
-                    !Select [0, !Ref Subnet],
-                    !Select [1, !Ref Subnet],
-                    !Select [2, !Ref Subnet],
-                    !Select [3, !Ref Subnet],
-                    !Select [4, !Ref Subnet],
-                  ],
-                  [
-                    !Select [0, !Ref Subnet],
-                    !Select [1, !Ref Subnet],
-                    !Select [2, !Ref Subnet],
-                    !Select [3, !Ref Subnet],
-                    !Select [4, !Ref Subnet],
-                    !Select [5, !Ref Subnet],
-                  ],
-                ],
-              ],
+            [
+              !Select [0, !Ref Subnet],
+              !Select [1, !Ref Subnet],
+              !Select [2, !Ref Subnet],
             ],
           ],
         ]
-  BastionLaunchConfiguration:
+  NatLaunchConfiguration:
     Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          disable_source_dest_check:
+            - disable_source_dest_check
+        disable_source_dest_check:
+          files:
+            /tmp/disable_source_dest_check.sh:
+              content: |
+                #!/bin/bash -x
+                instance=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
+                availability_zone=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)
+                region=${availability_zone:0:-1}
+                aws ec2 modify-instance-attribute --region ${region} --instance-id ${instance} --source-dest-check "{\"Value\": false}"
+              mode: 000500
+              owner: root
+              group: root
+          commands:
+            disable_source_dest_check:
+              command: ./disable_source_dest_check.sh
+              cwd: /tmp
+              ignoreErrors: false
+
     Properties:
-      IamInstanceProfile: !Ref BastionInstanceProfile
-      ImageId: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+      AssociatePublicIpAddress: true
+      InstanceType: !Ref NatInstanceType
+      IamInstanceProfile: !Ref NatInstanceProfile
+      ImageId: !FindInMap [NatRegionMap, !Ref 'AWS::Region', AMI]
       InstanceMonitoring: true
-      InstanceType: !Ref BastionInstanceType
       KeyName: !Ref EC2KeyName
       SecurityGroups:
-        - !Ref BastionSecurityGroup
+        - !Ref NatSecurityGroup
       UserData:
-        'Fn::Base64': |
+        'Fn::Base64': !Sub |
           #cloud-config
           repo_update: true
           repo_upgrade: all
-  BastionInstanceProfile:
+
+          runcmd:
+            - yum update -y && yum install -y yum-cron && chkconfig yum-cron on
+            - /opt/aws/bin/cfn-init --configsets disable_source_dest_check --verbose --stack ${AWS::StackName} --resource NatLaunchConfiguration --region ${AWS::Region}
+            - /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource NatLaunchConfiguration --region ${AWS::Region}
+
+  NatInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Path: '/'
       Roles:
-        - !Ref BastionInstanceRole
-  BastionInstanceRole:
+        - !Ref NatInstanceRole
+  NatInstanceRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -296,3 +289,12 @@ Resources:
                   - logs:DescribeLogStreams
                 Resource:
                   - arn:aws:logs:*:*:*
+        - PolicyName: sourceDestCheck
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:ModifyInstanceAttribute
+                Resource:
+                  - '*'

@@ -43,6 +43,7 @@ Metadata:
           - DataSubnet0Cidr
           - DataSubnet1Cidr
           - DataSubnet2Cidr
+          - NatInstanceType
       - Label:
           default: File System Tier
         Parameters:
@@ -188,6 +189,8 @@ Metadata:
         default: Data Subnet 1
       DataSubnet2Cidr:
         default: Data Subnet 2
+      NatInstanceType:
+        default: t3.nano
 
 Parameters:
   S3Bucket:
@@ -196,6 +199,102 @@ Parameters:
   S3Key:
     Type: String
     Description: '[OPTIONAL] S3Key.  Must end in /'
+  NatInstanceType:
+    AllowedValues:
+      - t2.nano
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t2.xlarge
+      - t2.2xlarge
+      - m3.medium
+      - m3.large
+      - m3.xlarge
+      - m3.2xlarge
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+      - m4.4xlarge
+      - m4.10xlarge
+      - m4.16xlarge
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - m5.12xlarge
+      - m5.24xlarge
+      - c3.large
+      - c3.xlarge
+      - c3.2xlarge
+      - c3.4xlarge
+      - c3.8xlarge
+      - c4.large
+      - c4.xlarge
+      - c4.2xlarge
+      - c4.4xlarge
+      - c4.8xlarge
+      - c5.large
+      - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+      - c5.9xlarge
+      - c5.18xlarge
+      - r3.large
+      - r3.xlarge
+      - r3.2xlarge
+      - r3.4xlarge
+      - r3.8xlarge
+      - r4.large
+      - r4.xlarge
+      - r4.2xlarge
+      - r4.4xlarge
+      - r4.8xlarge
+      - r4.16xlarge
+      - x1.16xlarge
+      - x1.32xlarge
+      - x1e.xlarge
+      - x1e.2xlarge
+      - x1e.4xlarge
+      - x1e.8xlarge
+      - x1e.16xlarge
+      - x1e.32xlarge
+      - d2.xlarge
+      - d2.2xlarge
+      - d2.4xlarge
+      - d2.8xlarge
+      - h1.2xlarge
+      - h1.4xlarge
+      - h1.8xlarge
+      - h1.16xlarge
+      - i2.xlarge
+      - i2.2xlarge
+      - i2.4xlarge
+      - i2.8xlarge
+      - i3.large
+      - i3.xlarge
+      - i3.2xlarge
+      - i3.4xlarge
+      - i3.8xlarge
+      - i3.16xlarge
+      - f1.2xlarge
+      - f1.16xlarge
+      - g2.2xlarge
+      - g2.8xlarge
+      - g3.4xlarge
+      - g3.8xlarge
+      - g3.16xlarge
+      - p2.xlarge
+      - p2.8xlarge
+      - p2.16xlarge
+      - p3.2xlarge
+      - p3.8xlarge
+      - p3.16xlarge
+    ConstraintDescription: Must be a valid Amazon EC2 instance type.
+    Default: t2.nano
+    Description: Bastion EC2 instance type.
+    Type: String
+
   BastionInstanceType:
     AllowedValues:
       - t2.nano
@@ -292,7 +391,7 @@ Parameters:
     Description: Bastion EC2 instance type.
     Type: String
   DatabaseCmk:
-    Description: AWS KMS Customer Master Key (CMK) to encrypt database cluster
+    Description: '[OPTIONAL]AWS KMS Customer Master Key (CMK) to encrypt database cluster'
     Type: String
   DatabaseEncrpytedBoolean:
     AllowedValues:
@@ -606,10 +705,8 @@ Parameters:
     Type: String
   PHPVersion:
     AllowedValues:
-      - 5.5
-      - 5.6
-      - 7.0
-    Default: 7.0
+      - 7.2
+    Default: 7.2
     Description: The version of PHP to install.
     Type: String
   SshAccessCidr:
@@ -1088,9 +1185,22 @@ Resources:
         Vpc: !GetAtt [newvpc, Outputs.Vpc]
       TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-02-securitygroups.yaml'
 
+  nat:
+    Condition: AvailableAWSRegion
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        NumberOfSubnets: !Ref NumberOfAZs
+        NatInstanceType: !Ref NatInstanceType
+        Subnet: !GetAtt [newvpc, Outputs.PublicSubnet]
+        EC2KeyName: !Ref EC2KeyName
+        NatSecurityGroup: !GetAtt [securitygroups, Outputs.NatSecurityGroup]
+      TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-03-nat.yaml'
+
   web:
     Condition: AvailableAWSRegion
     Type: AWS::CloudFormation::Stack
+    DependsOn: nat
     Properties:
       Parameters:
         DatabaseClusterEndpointAddress:

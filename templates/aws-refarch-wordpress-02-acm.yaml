@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Creates ACM Certificate and validates
+Description: Reference Architecture to host WordPress on AWS - Create SSL Cert
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:

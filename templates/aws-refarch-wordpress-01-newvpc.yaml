@@ -283,25 +283,13 @@ Resources:
     Properties:
       InternetGatewayId: !Ref InternetGateway
       VpcId: !Ref Vpc
-  NatEIP0:
-    Condition: AZ0
-    Type: AWS::EC2::EIP
-    Properties:
-      Domain: vpc
-  NatGateway0:
-    Condition: AZ0
-    Type: AWS::EC2::NatGateway
-    DependsOn: AttachInternetGateway
-    Properties:
-      AllocationId: !GetAtt NatEIP0.AllocationId
-      SubnetId: !Ref PublicSubnet0
   NatRoute0:
     Condition: AZ0
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref NatRouteTable0
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGateway0
+      GatewayId: !Ref InternetGateway
   NatRouteTable0:
     Condition: AZ0
     Type: AWS::EC2::RouteTable
@@ -312,25 +300,13 @@ Resources:
         - Key: Network
           Value: Public
       VpcId: !Ref Vpc
-  NatEIP1:
-    Condition: AZ1
-    Type: AWS::EC2::EIP
-    Properties:
-      Domain: vpc
-  NatGateway1:
-    Condition: AZ1
-    Type: AWS::EC2::NatGateway
-    DependsOn: AttachInternetGateway
-    Properties:
-      AllocationId: !GetAtt NatEIP1.AllocationId
-      SubnetId: !Ref PublicSubnet1
   NatRoute1:
     Condition: AZ1
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref NatRouteTable1
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGateway1
+      GatewayId: !Ref InternetGateway
   NatRouteTable1:
     Condition: AZ1
     Type: AWS::EC2::RouteTable
@@ -341,25 +317,13 @@ Resources:
         - Key: Network
           Value: Public
       VpcId: !Ref Vpc
-  NatEIP2:
-    Condition: AZ2
-    Type: AWS::EC2::EIP
-    Properties:
-      Domain: vpc
-  NatGateway2:
-    Condition: AZ2
-    Type: AWS::EC2::NatGateway
-    DependsOn: AttachInternetGateway
-    Properties:
-      AllocationId: !GetAtt NatEIP2.AllocationId
-      SubnetId: !Ref PublicSubnet2
   NatRoute2:
     Condition: AZ2
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref NatRouteTable2
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NatGateway2
+      GatewayId: !Ref InternetGateway
   NatRouteTable2:
     Condition: AZ2
     Type: AWS::EC2::RouteTable
