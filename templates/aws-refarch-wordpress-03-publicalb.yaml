@@ -70,7 +70,6 @@ Conditions:
   NumberOfSubnets5: !Equals [5, !Ref NumberOfSubnets]
 Resources:
   PublicAlbListenerSslCertificate:
-    Condition: SslCertificate
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       Certificates:

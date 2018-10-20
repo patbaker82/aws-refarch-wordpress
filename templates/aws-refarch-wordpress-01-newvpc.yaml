@@ -283,13 +283,6 @@ Resources:
     Properties:
       InternetGatewayId: !Ref InternetGateway
       VpcId: !Ref Vpc
-  NatRoute0:
-    Condition: AZ0
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref NatRouteTable0
-      DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref InternetGateway
   NatRouteTable0:
     Condition: AZ0
     Type: AWS::EC2::RouteTable
@@ -300,13 +293,6 @@ Resources:
         - Key: Network
           Value: Public
       VpcId: !Ref Vpc
-  NatRoute1:
-    Condition: AZ1
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref NatRouteTable1
-      DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref InternetGateway
   NatRouteTable1:
     Condition: AZ1
     Type: AWS::EC2::RouteTable
@@ -317,13 +303,6 @@ Resources:
         - Key: Network
           Value: Public
       VpcId: !Ref Vpc
-  NatRoute2:
-    Condition: AZ2
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref NatRouteTable2
-      DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref InternetGateway
   NatRouteTable2:
     Condition: AZ2
     Type: AWS::EC2::RouteTable
@@ -455,6 +434,20 @@ Resources:
                 Resource: '*'
 
 Outputs:
+  NatRouteTable:
+    Value:
+      !If [
+        NumberOfAZs1,
+        !Ref NatRouteTable0,
+        !If [
+          NumberOfAZs2,
+          !Join [',', [!Ref NatRouteTable0, !Ref NatRouteTable1]],
+          !Join [
+            ',',
+            [!Ref NatRouteTable0, !Ref NatRouteTable1, !Ref NatRouteTable2],
+          ],
+        ],
+      ]
   Vpc:
     Value: !Ref Vpc
   VpcCidr:

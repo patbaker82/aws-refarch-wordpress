@@ -466,7 +466,6 @@ Resources:
             - build_opcache
             - download_aws_ini
             - install_aws_ini
-            - install_cacheclient
             - install_wordpress
             - install_opcache
             - start_webserver
@@ -626,7 +625,6 @@ Resources:
                     "' --admin_email='",
                     !Ref WPAdminEmail,
                     "' --skip-email --allow-root\n",
-                    "       wp plugin install w3-total-cache\n",
                     "       sed -i \"/$table_prefix = 'wp_';/ a \\define('WP_HOME', 'http://' . \\$_SERVER['HTTP_HOST']); \" /var/www/wordpress/",
                     !Ref WPDirectory,
                     "/wp-config.php\n",
@@ -738,7 +736,7 @@ Resources:
           runcmd:
             - mkdir -p /var/www/wordpress
             - mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${ElasticFileSystem}.efs.${AWS::Region}.amazonaws.com:/ /var/www/wordpress
-            - /opt/aws/bin/cfn-init --configsets deploy_webserver --verbose --stack ${AWS::StackName} --resource WebLaunchConfiguration70 --region ${AWS::Region}
+            - /opt/aws/bin/cfn-init --configsets deploy_webserver --verbose --stack ${AWS::StackName} --resource WebLaunchConfiguration72 --region ${AWS::Region}
             - /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource WebAutoScalingGroup --region ${AWS::Region}
 
 Outputs:

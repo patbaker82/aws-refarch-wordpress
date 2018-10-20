@@ -190,7 +190,7 @@ Metadata:
       DataSubnet2Cidr:
         default: Data Subnet 2
       NatInstanceType:
-        default: t3.nano
+        default: t2.nano
 
 Parameters:
   S3Bucket:
@@ -292,7 +292,7 @@ Parameters:
       - p3.16xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
     Default: t2.nano
-    Description: Bastion EC2 instance type.
+    Description: NAT EC2 instance type.
     Type: String
 
   BastionInstanceType:
@@ -1195,6 +1195,7 @@ Resources:
         Subnet: !GetAtt [newvpc, Outputs.PublicSubnet]
         EC2KeyName: !Ref EC2KeyName
         NatSecurityGroup: !GetAtt [securitygroups, Outputs.NatSecurityGroup]
+        NatRouteTable: !GetAtt [newvpc, Outputs.NatRouteTable]
       TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-03-nat.yaml'
 
   web:

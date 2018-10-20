@@ -25,6 +25,7 @@ Metadata:
           - NatInstanceType
           - EC2KeyName
           - NatSecurityGroup
+          - NatRouteTable
     ParameterLabels:
       Subnet:
         default: Subnets
@@ -36,8 +37,13 @@ Metadata:
         default: Existing Key Pair
       NatSecurityGroup:
         default: Web Security Group
+      NatRouteTable:
+        default: Nat Route Table
 
 Parameters:
+  NatRouteTable:
+    Description: List of nat route tables
+    Type: CommaDelimitedList
   NatSecurityGroup:
     Description: Select the web security group.
     Type: AWS::EC2::SecurityGroup::Id
@@ -183,57 +189,111 @@ Mappings:
 Conditions:
   NumberOfSubnets1: !Equals [1, !Ref NumberOfSubnets]
   NumberOfSubnets2: !Equals [2, !Ref NumberOfSubnets]
+  NumberOfSubnets3: !Equals [3, !Ref NumberOfSubnets]
+
+  AZ0: !Or
+    - !Condition NumberOfSubnets1
+    - !Condition NumberOfSubnets2
+    - !Condition NumberOfSubnets3
+  AZ1: !Or
+    - !Condition NumberOfSubnets2
+    - !Condition NumberOfSubnets2
+  AZ2: !Condition NumberOfSubnets3
 
 Resources:
-  NatAutoScalingGroup:
+  NatAutoScalingGroup0:
+    Condition: AZ0
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       Cooldown: '60'
       HealthCheckGracePeriod: 120
       HealthCheckType: EC2
-      LaunchConfigurationName: !Ref NatLaunchConfiguration
-      MaxSize: '3'
+      LaunchConfigurationName: !Ref NatLaunchConfiguration0
+      MaxSize: '1'
       MinSize: '1'
       Tags:
         - Key: Name
           Value: !Join ['', ['NAT / ', !Ref 'AWS::StackName']]
           PropagateAtLaunch: true
       VPCZoneIdentifier:
-        !If [
-          NumberOfSubnets1,
-          [!Select [0, !Ref Subnet]],
-          !If [
-            NumberOfSubnets2,
-            [!Select [0, !Ref Subnet], !Select [1, !Ref Subnet]],
-            [
-              !Select [0, !Ref Subnet],
-              !Select [1, !Ref Subnet],
-              !Select [2, !Ref Subnet],
-            ],
-          ],
-        ]
-  NatLaunchConfiguration:
+       - !Select [0, !Ref Subnet]
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT5M
+
+  NatAutoScalingGroup1:
+    Condition: AZ1
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      Cooldown: '60'
+      HealthCheckGracePeriod: 120
+      HealthCheckType: EC2
+      LaunchConfigurationName: !Ref NatLaunchConfiguration1
+      MaxSize: '1'
+      MinSize: '1'
+      Tags:
+        - Key: Name
+          Value: !Join ['', ['NAT / ', !Ref 'AWS::StackName']]
+          PropagateAtLaunch: true
+      VPCZoneIdentifier:
+        - !Select [1, !Ref Subnet]
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT5M
+
+  NatAutoScalingGroup2:
+    Condition: AZ2
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      Cooldown: '60'
+      HealthCheckGracePeriod: 120
+      HealthCheckType: EC2
+      LaunchConfigurationName: !Ref NatLaunchConfiguration2
+      MaxSize: '1'
+      MinSize: '1'
+      Tags:
+        - Key: Name
+          Value: !Join ['', ['NAT / ', !Ref 'AWS::StackName']]
+          PropagateAtLaunch: true
+      VPCZoneIdentifier:
+        - !Select [2, !Ref Subnet]
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT5M
+
+  NatLaunchConfiguration0:
+    Condition: AZ0
     Type: AWS::AutoScaling::LaunchConfiguration
     Metadata:
       AWS::CloudFormation::Init:
         configSets:
-          disable_source_dest_check:
-            - disable_source_dest_check
-        disable_source_dest_check:
+          configure_nat:
+            - configure_nat
+        configure_nat:
           files:
-            /tmp/disable_source_dest_check.sh:
-              content: |
-                #!/bin/bash -x
-                instance=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)
-                availability_zone=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)
-                region=${availability_zone:0:-1}
-                aws ec2 modify-instance-attribute --region ${region} --instance-id ${instance} --source-dest-check "{\"Value\": false}"
+            /tmp/configure_nat.sh:
+              content: !Join [
+                '',
+                [
+                  "#!/bin/bash -x\n",
+                  "instance=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)\n",
+                  "availability_zone=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)\n",
+                  "region=${availability_zone:0:-1}\n",
+                  "aws ec2 modify-instance-attribute --region ${region} --instance-id ${instance} --source-dest-check '{\"Value\": false}'\n",
+                  "aws ec2 replace-route --region ${region} --route-table-id ",
+                  !Select [0, !Ref NatRouteTable],
+                  " --destination-cidr-block '0.0.0.0/0' --instance-id $instance ",
+                  "|| aws ec2 create-route --region ${region} --route-table-id ",
+                  !Select [0, !Ref NatRouteTable],
+                  " --destination-cidr-block '0.0.0.0/0' --instance-id $instance\n"
+                ]
+              ]
               mode: 000500
               owner: root
               group: root
           commands:
-            disable_source_dest_check:
-              command: ./disable_source_dest_check.sh
+            configure_nat:
+              command: ./configure_nat.sh
               cwd: /tmp
               ignoreErrors: false
 
@@ -254,8 +314,118 @@ Resources:
 
           runcmd:
             - yum update -y && yum install -y yum-cron && chkconfig yum-cron on
-            - /opt/aws/bin/cfn-init --configsets disable_source_dest_check --verbose --stack ${AWS::StackName} --resource NatLaunchConfiguration --region ${AWS::Region}
-            - /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource NatLaunchConfiguration --region ${AWS::Region}
+            - /opt/aws/bin/cfn-init --configsets configure_nat --verbose --stack ${AWS::StackName} --resource NatLaunchConfiguration0 --region ${AWS::Region}
+            - /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource NatLaunchConfiguration0 --region ${AWS::Region}
+
+  NatLaunchConfiguration1:
+    Condition: AZ1
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          configure_nat:
+            - configure_nat
+        configure_nat:
+          files:
+            /tmp/configure_nat.sh:
+              content: !Join [
+                '',
+                [
+                  "#!/bin/bash -x\n",
+                  "instance=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)\n",
+                  "availability_zone=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)\n",
+                  "region=${availability_zone:0:-1}\n",
+                  "aws ec2 modify-instance-attribute --region ${region} --instance-id ${instance} --source-dest-check '{\"Value\": false}'\n",
+                  "aws ec2 replace-route --region ${region} --route-table-id ",
+                  !Select [1, !Ref NatRouteTable],
+                  " --destination-cidr-block '0.0.0.0/0' --instance-id $instance ",
+                  "|| aws ec2 create-route --region ${region} --route-table-id ",
+                  !Select [1, !Ref NatRouteTable],
+                  " --destination-cidr-block '0.0.0.0/0' --instance-id $instance\n"
+                ]
+              ]
+              mode: 000500
+              owner: root
+              group: root
+          commands:
+            configure_nat:
+              command: ./configure_nat.sh
+              cwd: /tmp
+              ignoreErrors: false
+
+    Properties:
+      AssociatePublicIpAddress: true
+      InstanceType: !Ref NatInstanceType
+      IamInstanceProfile: !Ref NatInstanceProfile
+      ImageId: !FindInMap [NatRegionMap, !Ref 'AWS::Region', AMI]
+      InstanceMonitoring: true
+      KeyName: !Ref EC2KeyName
+      SecurityGroups:
+        - !Ref NatSecurityGroup
+      UserData:
+        'Fn::Base64': !Sub |
+          #cloud-config
+          repo_update: true
+          repo_upgrade: all
+
+          runcmd:
+            - yum update -y && yum install -y yum-cron && chkconfig yum-cron on
+            - /opt/aws/bin/cfn-init --configsets configure_nat --verbose --stack ${AWS::StackName} --resource NatLaunchConfiguration1 --region ${AWS::Region}
+            - /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource NatLaunchConfiguration1 --region ${AWS::Region}
+
+  NatLaunchConfiguration2:
+    Condition: AZ2
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          configure_nat:
+            - configure_nat
+        configure_nat:
+          files:
+            /tmp/configure_nat.sh:
+              content: !Join [
+                '',
+                [
+                  "#!/bin/bash -x\n",
+                  "instance=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)\n",
+                  "availability_zone=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)\n",
+                  "region=${availability_zone:0:-1}\n",
+                  "aws ec2 modify-instance-attribute --region ${region} --instance-id ${instance} --source-dest-check '{\"Value\": false}'\n",
+                  "aws ec2 replace-route --region ${region} --route-table-id ",
+                  !Select [2, !Ref NatRouteTable],
+                  " --destination-cidr-block '0.0.0.0/0' --instance-id $instance ",
+                  "|| aws ec2 create-route --region ${region} --route-table-id ",
+                  !Select [2, !Ref NatRouteTable],
+                  " --destination-cidr-block '0.0.0.0/0' --instance-id $instance\n"
+                ]
+              ]
+          commands:
+            configure_nat:
+              command: ./configure_nat.sh
+              cwd: /tmp
+              ignoreErrors: false
+
+    Properties:
+      AssociatePublicIpAddress: true
+      InstanceType: !Ref NatInstanceType
+      IamInstanceProfile: !Ref NatInstanceProfile
+      ImageId: !FindInMap [NatRegionMap, !Ref 'AWS::Region', AMI]
+      InstanceMonitoring: true
+      KeyName: !Ref EC2KeyName
+      SecurityGroups:
+        - !Ref NatSecurityGroup
+      UserData:
+        'Fn::Base64': !Sub |
+          #cloud-config
+          repo_update: true
+          repo_upgrade: all
+
+          runcmd:
+            - yum update -y && yum install -y yum-cron && chkconfig yum-cron on
+            - /opt/aws/bin/cfn-init --configsets configure_nat --verbose --stack ${AWS::StackName} --resource NatLaunchConfiguration2 --region ${AWS::Region}
+            - /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource NatLaunchConfiguration2 --region ${AWS::Region}
+
 
   NatInstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -289,12 +459,14 @@ Resources:
                   - logs:DescribeLogStreams
                 Resource:
                   - arn:aws:logs:*:*:*
-        - PolicyName: sourceDestCheck
+        - PolicyName: ec2
           PolicyDocument:
             Version: 2012-10-17
             Statement:
               - Effect: Allow
                 Action:
                   - ec2:ModifyInstanceAttribute
+                  - ec2:CreateRoute
+                  - ec2:ReplaceRoute
                 Resource:
                   - '*'
