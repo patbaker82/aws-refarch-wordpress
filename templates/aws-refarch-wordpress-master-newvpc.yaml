@@ -1174,7 +1174,7 @@ Resources:
             !GetAtt [publicalb, Outputs.PublicAlbCanonicalHostedZoneId],
           ]
         WPDomainName: !Ref WPDomainName
-      TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-02-route53.yaml'
+      TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-05-route53.yaml'
 
   securitygroups:
     Condition: AvailableAWSRegion

@@ -52,20 +52,7 @@ Parameters:
     Type: AWS::Route53::HostedZone::Id
 
 Resources:
-  NewRecordSet:
-    Condition: DontUseExistingRecordSet
-    Type: AWS::Route53::RecordSetGroup
-    Properties:
-      HostedZoneName: !Join ['', [!Ref WPDomainName, '.']]
-      RecordSets:
-        - Name: !Join ['', ['www.', !Ref WPDomainName, '.']]
-          Type: A
-          AliasTarget:
-            DNSName: !Ref DnsEndpoint
-            EvaluateTargetHealth: True
-            HostedZoneId: !Ref DnsHostId
-  ExistingRecordSet:
-    Condition: UseExistingRecordSet
+  CreateRecord:
     Type: AWS::Route53::RecordSetGroup
     Properties:
       HostedZoneId: !Ref HostedZoneId

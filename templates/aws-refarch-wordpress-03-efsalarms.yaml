@@ -186,7 +186,7 @@ Mappings:
     sa-east-1:
       AMI: ami-f1344b9d
     us-east-1:
-      AMI: ami-8c1be5f6
+      AMI: ami-0ff8a91507f77f867
     us-east-2:
       AMI: ami-c5062ba0
     us-west-1:

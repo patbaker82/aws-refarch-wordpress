@@ -168,7 +168,7 @@ Parameters:
 Mappings:
   NatRegionMap:
     us-east-1:
-      AMI: ami-184dc970
+      AMI: ami-0422d936d535c63b1
     us-west-1:
       AMI: ami-a98396ec
     us-west-2:
@@ -315,7 +315,7 @@ Resources:
           runcmd:
             - yum update -y && yum install -y yum-cron && chkconfig yum-cron on
             - /opt/aws/bin/cfn-init --configsets configure_nat --verbose --stack ${AWS::StackName} --resource NatLaunchConfiguration0 --region ${AWS::Region}
-            - /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource NatLaunchConfiguration0 --region ${AWS::Region}
+            - /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource NatAutoScalingGroup0 --region ${AWS::Region}
 
   NatLaunchConfiguration1:
     Condition: AZ1
@@ -371,7 +371,7 @@ Resources:
           runcmd:
             - yum update -y && yum install -y yum-cron && chkconfig yum-cron on
             - /opt/aws/bin/cfn-init --configsets configure_nat --verbose --stack ${AWS::StackName} --resource NatLaunchConfiguration1 --region ${AWS::Region}
-            - /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource NatLaunchConfiguration1 --region ${AWS::Region}
+            - /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource NatAutoScalingGroup1 --region ${AWS::Region}
 
   NatLaunchConfiguration2:
     Condition: AZ2
@@ -424,7 +424,7 @@ Resources:
           runcmd:
             - yum update -y && yum install -y yum-cron && chkconfig yum-cron on
             - /opt/aws/bin/cfn-init --configsets configure_nat --verbose --stack ${AWS::StackName} --resource NatLaunchConfiguration2 --region ${AWS::Region}
-            - /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource NatLaunchConfiguration2 --region ${AWS::Region}
+            - /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource NatAutoScalingGroup2 --region ${AWS::Region}
 
 
   NatInstanceProfile:
