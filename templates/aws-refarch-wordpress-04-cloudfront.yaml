@@ -40,12 +40,6 @@ Resources:
     Properties:
       DistributionConfig:
         HttpVersion: http2
-        Aliases:
-          - !If [
-              WPDomainName,
-              !Join ['', ['*.', !Ref WPDomainName]],
-              !Ref 'AWS::NoValue',
-            ]
         CacheBehaviors:
           - PathPattern: wp-includes/*
             AllowedMethods:
@@ -100,8 +94,6 @@ Resources:
           MinTTL: 0
           ForwardedValues:
             QueryString: true
-            Headers:
-              - '*'
             Cookies:
               Forward: all
           TargetOriginId: !Join ['', ['www.', !Ref WPDomainName]]

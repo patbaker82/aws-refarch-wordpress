@@ -1042,6 +1042,8 @@ Resources:
         EfsCreateAlarms: !Ref EfsCreateAlarms
       TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-06-dashboard.yaml'
   efsfilesystem:
+    Condition: AvailableAWSRegion
+    DependsOn: [nat]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -1057,6 +1059,7 @@ Resources:
       TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-03-efsfilesystem.yaml'
   efsalarms:
     Condition: EfsCreateAlarms
+    DependsOn: [nat]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -1082,6 +1085,7 @@ Resources:
         NumberOfSubnets: !Ref NumberOfAZs
       TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-03-elasticache.yaml'
   newvpc:
+    Condition: AvailableAWSRegion
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
