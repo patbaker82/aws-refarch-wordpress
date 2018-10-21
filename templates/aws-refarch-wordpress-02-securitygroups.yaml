@@ -146,6 +146,14 @@ Resources:
           FromPort: 443
           ToPort: 443
           SourceSecurityGroupId: !Ref WebSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref EfsSecurityGroup
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !Ref EfsSecurityGroup
       VpcId: !Ref Vpc
 
 Outputs:

@@ -1007,11 +1007,10 @@ Resources:
       TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-03-bastion.yaml'
   cloudfront:
     Condition: DeployCloudFront
-    DependsOn: web
+    DependsOn: [publicalb, web, route53]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        PublicAlbDnsName: !GetAtt [publicalb, Outputs.PublicAlbDnsName]
         WPDomainName: !Ref WPDomainName
       TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-04-cloudfront.yaml'
   dashboardwithalarms:
@@ -1161,18 +1160,8 @@ Resources:
           - CreateNewZone
           - !GetAtt [route53createzone, Outputs.HostedZoneId]
           - !Ref ExistingRoute53Domain
-        DnsEndpoint:
-          !If [
-            DeployCloudFront,
-            !GetAtt [cloudfront, Outputs.DnsEndpoint],
-            !GetAtt [publicalb, Outputs.PublicAlbDnsName],
-          ]
-        DnsHostId:
-          !If [
-            DeployCloudFront,
-            'Z2FDTNDATAQYW2',
-            !GetAtt [publicalb, Outputs.PublicAlbCanonicalHostedZoneId],
-          ]
+        DnsEndpoint: !GetAtt [publicalb, Outputs.PublicAlbDnsName]
+        DnsHostId: !GetAtt [publicalb, Outputs.PublicAlbCanonicalHostedZoneId]
         WPDomainName: !Ref WPDomainName
       TemplateURL: !Sub 'https://${S3Bucket}.s3.amazonaws.com/${S3Key}templates/aws-refarch-wordpress-05-route53.yaml'
 

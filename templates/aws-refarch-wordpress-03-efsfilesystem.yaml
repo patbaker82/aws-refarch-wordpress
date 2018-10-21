@@ -423,7 +423,7 @@ Resources:
 
                 # get region from instance meta-data
                 availabilityzone=$(curl -s http://169.254.169.254/latest/meta-data/placement/availability-zone)
-                region=${!availabilityzone:0:-1}
+                region=${availabilityzone:0:-1}
 
                 # get instance id
                 instance_id=$(curl -s http://169.254.169.254/latest/meta-data/instance-id)

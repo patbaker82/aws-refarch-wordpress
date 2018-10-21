@@ -21,41 +21,25 @@ Metadata:
           default: AWS Parameters
         Parameters:
           - WPDomainName
-          - PublicAlbDnsName
-          - OriginSSL
     ParameterLabels:
-      PublicAlbDnsName:
-        default: Public ALB DNS Name
       WPDomainName:
         default: Domain name of the WordPress site
-      OriginSSL:
-        default: Origin is using SSL?
 
 Parameters:
-  PublicAlbDnsName:
-    Description: The public application load balancer dns name.
-    Type: String
   WPDomainName:
     AllowedPattern: ^$|(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$
     Description: '[ Optional ] The main domain name of the WordPress site (e.g. example.com).'
     Type: String
-  OriginSSL:
-    AllowedValues:
-      - true
-      - false
-    Default: true
-    Type: String
 
 Conditions:
   WPDomainName: !Not [!Equals ['', !Ref WPDomainName]]
-  OriginSSL: !Equals [true, !Ref OriginSSL]
-  OriginNotSSL: !Not [!Equals [true, !Ref OriginSSL]]
-
 Resources:
   CloudFront:
+    Condition: WPDomainName
     Type: AWS::CloudFront::Distribution
     Properties:
       DistributionConfig:
+        HttpVersion: http2
         Aliases:
           - !If [
               WPDomainName,
@@ -79,8 +63,8 @@ Resources:
               QueryString: true
               Headers:
                 - Host
-            TargetOriginId: elb
-            ViewerProtocolPolicy: allow-all
+            TargetOriginId: !Join ['', ['www.', !Ref WPDomainName]]
+            ViewerProtocolPolicy: redirect-to-https
             Compress: true
           - PathPattern: wp-content/*
             AllowedMethods:
@@ -98,8 +82,8 @@ Resources:
               QueryString: true
               Headers:
                 - Host
-            TargetOriginId: elb
-            ViewerProtocolPolicy: allow-all
+            TargetOriginId: !Join ['', ['www.', !Ref WPDomainName]]
+            ViewerProtocolPolicy: redirect-to-https
             Compress: true
         Comment: !Ref 'AWS::StackName'
         DefaultCacheBehavior:
@@ -120,27 +104,15 @@ Resources:
               - '*'
             Cookies:
               Forward: all
-          TargetOriginId: elb
-          ViewerProtocolPolicy: allow-all
+          TargetOriginId: !Join ['', ['www.', !Ref WPDomainName]]
+          ViewerProtocolPolicy: redirect-to-https
           Compress: true
         Enabled: true
         Origins:
-          - DomainName: !Ref PublicAlbDnsName
-            Id: elb
+          - DomainName: !Join ['', ['www.', !Ref WPDomainName]]
+            Id: !Join ['', ['www.', !Ref WPDomainName]]
             CustomOriginConfig:
-              OriginProtocolPolicy: !If
-                - OriginSSL
-                - https-only
-                - http-only
+              OriginProtocolPolicy: https-only
+              OriginSSLProtocols:
+                - TLSv1.2
         PriceClass: PriceClass_100
-
-Outputs:
-  DnsEndpoint:
-    Value: !GetAtt CloudFront.DomainName
-  DnsHostname:
-    Value:
-      !If [
-        OriginNotSSL,
-        !Join ['', ['http://', !GetAtt CloudFront.DomainName]],
-        !Join ['', ['https://', !GetAtt CloudFront.DomainName]],
-      ]
