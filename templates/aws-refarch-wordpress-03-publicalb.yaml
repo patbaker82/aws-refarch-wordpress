@@ -69,6 +69,15 @@ Conditions:
   NumberOfSubnets4: !Equals [4, !Ref NumberOfSubnets]
   NumberOfSubnets5: !Equals [5, !Ref NumberOfSubnets]
 Resources:
+  PublicAlbListenerNoSslCertificate:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref PublicAlbTargetGroup
+      LoadBalancerArn: !Ref PublicApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
   PublicAlbListenerSslCertificate:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
