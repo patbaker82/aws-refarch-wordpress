@@ -573,7 +573,7 @@ Resources:
             /tmp/install_opcache.sh:
               content: !Sub |
                 #!/bin/bash -xe
-                aws s3 cp s3://${S3BucketName}/${S3KeyPrefix}opcache-instance-id.php .
+                aws s3 cp s3://${S3BucketName}/${S3KeyPrefix}config/opcache-instance-id.php .
                 cp -a /tmp/opcache-instance-id.php /var/www/wordpress/${WPDirectory}
 
                 # create hidden opcache directory locally & change owner to apache
