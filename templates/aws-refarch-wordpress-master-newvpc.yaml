@@ -75,7 +75,6 @@ Metadata:
           default: Web Tier
         Parameters:
           - PHPVersion
-          - PHPIniOverride
           - WebInstanceType
           - WebAsgMax
           - WebAsgMin
@@ -129,8 +128,6 @@ Metadata:
         default: Cache Cluster Node Type
       EC2KeyName:
         default: EC2 Key Pair
-      PHPIniOverride:
-        default: AWS php.ini Overrides
       SshAccessCidr:
         default: SSH Access From
       UseElastiCacheBoolean:
@@ -700,9 +697,6 @@ Parameters:
     ConstraintDescription: Must be letters (upper or lower), numbers, and special characters.
     Description: Name of an EC2 KeyPair. Your bastion & Web instances will launch with this KeyPair.
     Type: AWS::EC2::KeyPair::KeyName
-  PHPIniOverride:
-    Description: '[OPTIONAL] Full Amazon S3 https path to a php.ini override file (e.g. https://s3.amazonaws.com/aws-refarch/wordpress/latest/bits/20-aws.ini)'
-    Type: String
   PHPVersion:
     AllowedValues:
       - 7.2
@@ -1147,7 +1141,7 @@ Resources:
     Properties:
       Parameters:
         LambdaZipsBucketName: !Ref S3Bucket
-        QSS3KeyPrefix: !Ref S3Key
+        S3KeyPrefix: !Ref S3Key
         DomainName: !Ref WPDomainName
         HostedZoneId: !If
           - CreateNewZone
@@ -1197,6 +1191,8 @@ Resources:
     DependsOn: nat
     Properties:
       Parameters:
+        S3BucketName: !Ref S3Bucket
+        S3KeyPrefix: !Ref S3Key
         DatabaseClusterEndpointAddress:
           !GetAtt [rds, Outputs.DatabaseClusterEndpointAddress]
         DatabaseMasterUsername: !Ref DatabaseMasterUsername
@@ -1205,7 +1201,6 @@ Resources:
         ElasticFileSystem: !GetAtt [efsfilesystem, Outputs.ElasticFileSystem]
         EC2KeyName: !Ref EC2KeyName
         NumberOfSubnets: !Ref NumberOfAZs
-        PHPIniOverride: !Ref PHPIniOverride
         PHPVersion: !Ref PHPVersion
         PublicAlbTargetGroupArn:
           !GetAtt [publicalb, Outputs.PublicAlbTargetGroupArn]

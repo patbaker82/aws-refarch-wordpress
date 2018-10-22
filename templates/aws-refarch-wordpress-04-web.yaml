@@ -20,7 +20,6 @@ Metadata:
           default: Web Parameters
         Parameters:
           - PHPVersion
-          - PHPIniOverride
           - EC2KeyName
           - WebInstanceType
           - WebAsgMax
@@ -52,9 +51,12 @@ Metadata:
           default: File System Parameters
         Parameters:
           - ElasticFileSystem
+      - Label:
+          default: S3 Configuration
+        Parameters:
+          - S3BucketName
+          - S3KeyPrefix
     ParameterLabels:
-      PHPIniOverride:
-        default: AWS php.ini Overrides
       DatabaseClusterEndpointAddress:
         default: DB Cluster Endpoint Address
       DatabaseMasterUsername:
@@ -101,7 +103,10 @@ Metadata:
         default: Site Title
       WPVersion:
         default: WordPress Version
-
+      S3BucketName:
+        default: 'Lambda Zips S3 Bucket Name'
+      S3KeyPrefix:
+        default: 'S3Prefix'
 Parameters:
   DatabaseClusterEndpointAddress:
     Description: The RDS cluster endpoint address.
@@ -143,9 +148,6 @@ Parameters:
       - 6
     Default: 3
     Description: Number of subnets. This must match your selections in the list of subnets below.
-    Type: String
-  PHPIniOverride:
-    Description: Full Amazon S3 https path to a php.ini override file (e.g. https://s3.amazonaws.com/aws-refarch/wordpress/latest/bits/20-aws.ini)
     Type: String
   PHPVersion:
     AllowedValues:
@@ -317,6 +319,24 @@ Parameters:
     Default: latest
     Description: The WordPress version (make sure this version is compatible with the PHP version selected above).
     Type: String
+  S3BucketName:
+    Default: ''
+    Description: >-
+      S3 bucket name for the Quick Start assets. This string can include
+      numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot
+      start or end with a hyphen (-).
+    Type: String
+  S3KeyPrefix:
+    AllowedPattern: '^[0-9a-zA-Z-/]*$'
+    ConstraintDescription: >-
+      Quick Start key prefix can include numbers, lowercase letters, uppercase
+      letters, hyphens (-), and forward slash (/).
+    Default: ''
+    Description: >-
+      S3 key prefix for the Quick Start assets. Quick Start key prefix can
+      include numbers, lowercase letters, uppercase letters, hyphens (-), and
+      forward slash (/).
+    Type: String
 
 Conditions:
   NumberOfSubnets1: !Equals [1, !Ref NumberOfSubnets]
@@ -462,11 +482,11 @@ Resources:
         configSets:
           deploy_webserver:
             - install_webserver
-            - configure_web_server
+            - download_nginx_config
+            - configure_nginx
             - build_wordpress
             - build_opcache
-            - download_aws_ini
-            - install_aws_ini
+            - create_php_ini
             - install_wordpress
             - install_opcache
             - start_webserver
@@ -482,20 +502,40 @@ Resources:
               php7-pear: []
               php72-mysqlnd: []
           files:
-            /tmp/move_default_nginx_config.sh:
+            /tmp/backup_default_nginx_config.sh:
               content: |
                 #!/bin/bash -xe
                 TIMESTAMP=$(date +%F_%H-%M-%S)
-                mv /etc/nginx /etc/nginx-backup-$TIMESTAMP
+                cp -a /etc/nginx /etc/nginx-backup-$TIMESTAMP
               mode: 000500
               owner: root
               group: root
           commands:
-            create_site_conf:
-              command: ./move_default_nginx_config.sh
+            backup_orig_nginx:
+              command: ./backup_default_nginx_config.sh
               cwd: /tmp
               ignoreErrors: false
-        ? configure_web_server
+        download_nginx_config:
+          sources:
+            /tmp: !Sub 'https://${S3BucketName}.s3.amazonaws.com/${S3KeyPrefix}bits/wordpress-nginx.tgz'
+        configure_nginx:
+          files:
+            /tmp/configure_nginx.sh:
+              content: !Sub |
+                #!/bin/bash -xe
+                chown -R root:root /tmp/wordpress-nginx
+                cp -a /tmp/wordpress-nginx/* /etc/nginx/
+                mv /etc/nginx/sites-enabled/example.com.conf /etc/nginx/sites-enabled/${WPDomainName}.conf
+                sed -i 's:/home/username/sites/example.com/public:'/var/www/wordpress/${WPDirectory}':gx' /etc/nginx/sites-enabled/${WPDomainName}.conf
+                sed -i 's/example.com/'${WPDomainName}'/g' /etc/nginx/sites-enabled/${WPDomainName}.conf
+              mode: 000500
+              owner: root
+              group: root
+          commands:
+            configure_nginx:
+              command: ./configure_nginx.sh
+              cwd: /tmp
+              ignoreErrors: false
         build_cacheclient:
           packages:
             yum:
@@ -640,29 +680,15 @@ Resources:
               mode: 000500
               owner: root
               group: root
-        download_aws_ini:
+        create_php_ini:
           files:
-            /tmp/download_aws_ini.sh:
-              content:
-                !Join [
-                  '',
-                  [
-                    "#!/bin/bash -x\n",
-                    "\n",
-                    'wget -P /etc/php-7.2.d/ ',
-                    !Ref PHPIniOverride,
-                    "\n",
-                  ],
-                ]
-              mode: 000500
+            /etc/php-7.2.d/php.ini:
+              content: |
+                realpath_cache_size = 128k
+                realpath_cache_ttl = 3600
+              mode: 000644
               owner: root
               group: root
-        install_aws_ini:
-          commands:
-            install_aws_ini:
-              command: ./download_aws_ini.sh
-              cwd: /tmp
-              ignoreErrors: true
         install_wordpress:
           commands:
             install_wordpress:
@@ -684,7 +710,10 @@ Resources:
         start_webserver:
           services:
             sysvinit:
-              httpd:
+              php-fpm:
+                enabled: true
+                ensureRunning: true
+              nginx:
                 enabled: true
                 ensureRunning: true
     Properties:
