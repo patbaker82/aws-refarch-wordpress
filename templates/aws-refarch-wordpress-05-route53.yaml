@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: Reference Architecture to host WordPress on AWS - Creates Route 53 record set (if selected)
+Description: Reference Architecture to host WordPress on AWS - Creates Route 53 record set
 
 Metadata:
   Authors:

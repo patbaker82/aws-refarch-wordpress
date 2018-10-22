@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: Reference Architecture to host WordPress on AWS - Creates New VPC
+Description: Reference Architecture to host WordPress on AWS - Creates NAT Instances
 
 Metadata:
   Authors:

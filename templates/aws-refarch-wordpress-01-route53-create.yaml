@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Create New Zone
+Description: Reference Architecture to host WordPress on AWS - Create New Route53 Zone
 Metadata:
   'AWS::CloudFormation::Interface':
     ParameterGroups:
