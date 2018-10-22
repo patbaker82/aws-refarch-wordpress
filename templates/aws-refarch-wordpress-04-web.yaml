@@ -530,6 +530,7 @@ Resources:
               content: !Sub |
                 #!/bin/bash -xe
                 aws s3 cp s3://${S3BucketName}/${S3KeyPrefix}config/wordpress-nginx.tgz .
+                tar -zxf wordpress-nginx.tgz
                 chown -R root:root /tmp/wordpress-nginx
                 cp -a /tmp/wordpress-nginx/* /etc/nginx/
                 mv /etc/nginx/sites-enabled/example.com.conf /etc/nginx/sites-enabled/${WPDomainName}.conf
