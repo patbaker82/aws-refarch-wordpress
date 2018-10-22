@@ -517,7 +517,7 @@ Resources:
               ignoreErrors: false
         download_nginx_config:
           sources:
-            /tmp: !Sub 'https://${S3BucketName}.s3.amazonaws.com/${S3KeyPrefix}bits/wordpress-nginx.tgz'
+            /tmp: !Sub 'https://${S3BucketName}.s3.amazonaws.com/${S3KeyPrefix}config/wordpress-nginx.tgz'
         configure_nginx:
           files:
             /tmp/configure_nginx.sh:
@@ -563,7 +563,7 @@ Resources:
               php72-opcache: []
           files:
             /tmp/install_opcache.sh:
-              content: !Sub |
+              content: |
                 #!/bin/bash -xe
                 # create hidden opcache directory locally & change owner to apache
                 if [ ! -d /var/www/.opcache ]; then
@@ -572,10 +572,6 @@ Resources:
                 # enable opcache in /etc/php-7.2.d/10-opcache.ini
                 sed -i 's/;opcache.file_cache=.*/opcache.file_cache=\/var\/www\/.opcache/' /etc/php-7.2.d/10-opcache.ini
                 sed -i 's/opcache.memory_consumption=.*/opcache.memory_consumption=512/' /etc/php-7.2.d/10-opcache.ini
-                # download opcache-instance.php to verify opcache status
-                if [ ! -f /var/www/wordpress/${WPDirectory}/opcache-instanceid.php ]; then
-                    wget -P /var/www/wordpress/${WPDirectory}/ https://s3.amazonaws.com/aws-refarch/wordpress/latest/bits/opcache-instanceid.php
-                fi
               mode: 000500
               owner: root
               group: root
@@ -656,13 +652,6 @@ Resources:
                     '       chmod u+wrx /var/www/wordpress/',
                     !Ref WPDirectory,
                     "/wp-content/*\n",
-                    '       if [ ! -f /var/www/wordpress/',
-                    !Ref WPDirectory,
-                    "/opcache-instanceid.php ]; then\n",
-                    '         wget -P /var/www/wordpress/',
-                    !Ref WPDirectory,
-                    "/ https://s3.amazonaws.com/aws-refarch/wordpress/latest/bits/opcache-instanceid.php\n",
-                    "       fi\n",
                     "   fi\n",
                     "   RESULT=$?\n",
                     "   if [ $RESULT -eq 0 ]; then\n",
@@ -735,7 +724,3 @@ Resources:
             - mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${ElasticFileSystem}.efs.${AWS::Region}.amazonaws.com:/ /var/www/wordpress
             - /opt/aws/bin/cfn-init --configsets deploy_webserver --verbose --stack ${AWS::StackName} --resource WebLaunchConfiguration72 --region ${AWS::Region}
             - /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource WebAutoScalingGroup --region ${AWS::Region}
-
-Outputs:
-  Opcachestatus:
-    Value: !Join ['', [!Ref PublicAlbHostname, '/opcache-instanceid.php']]
