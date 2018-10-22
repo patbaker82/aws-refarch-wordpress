@@ -411,6 +411,16 @@ Resources:
                   - logs:DescribeLogStreams
                 Resource:
                   - arn:aws:logs:*:*:*
+        - PolicyName: s3
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource:
+                  - arn:aws:s3:::*/wordpress-nginx.tgz
+                  - arn:aws:s3:::*/opcache-instance-id.php
   WebAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
@@ -482,7 +492,6 @@ Resources:
         configSets:
           deploy_webserver:
             - install_webserver
-            - download_nginx_config
             - configure_nginx
             - build_wordpress
             - build_opcache
@@ -515,14 +524,12 @@ Resources:
               command: ./backup_default_nginx_config.sh
               cwd: /tmp
               ignoreErrors: false
-        download_nginx_config:
-          sources:
-            /tmp: !Sub 'https://${S3BucketName}.s3.amazonaws.com/${S3KeyPrefix}config/wordpress-nginx.tgz'
         configure_nginx:
           files:
             /tmp/configure_nginx.sh:
               content: !Sub |
                 #!/bin/bash -xe
+                aws s3 cp s3://${S3BucketName}/${S3KeyPrefix}config/wordpress-nginx.tgz .
                 chown -R root:root /tmp/wordpress-nginx
                 cp -a /tmp/wordpress-nginx/* /etc/nginx/
                 mv /etc/nginx/sites-enabled/example.com.conf /etc/nginx/sites-enabled/${WPDomainName}.conf
@@ -563,8 +570,11 @@ Resources:
               php72-opcache: []
           files:
             /tmp/install_opcache.sh:
-              content: |
+              content: !Sub |
                 #!/bin/bash -xe
+                aws s3 cp s3://${S3BucketName}/${S3KeyPrefix}opcache-instance-id.php .
+                cp -a /tmp/opcache-instance-id.php /var/www/wordpress/${WPDirectory}
+
                 # create hidden opcache directory locally & change owner to apache
                 if [ ! -d /var/www/.opcache ]; then
                     mkdir -p /var/www/.opcache
