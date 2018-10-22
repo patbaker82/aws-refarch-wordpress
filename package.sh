@@ -8,7 +8,7 @@ mkdir -p dist/lambda
 mkdir -p dist/templates
 
 cd config
-tar cfz ../dist/config/word-press-nginx.tgz wordpress-nginx
+tar cfz ../dist/config/wordpress-nginx.tgz wordpress-nginx
 cp -a opcache-instance-id.php ../dist/config
 cd ..
 
