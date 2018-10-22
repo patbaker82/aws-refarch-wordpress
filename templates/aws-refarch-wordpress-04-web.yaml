@@ -526,8 +526,8 @@ Resources:
                 chown -R root:root /tmp/wordpress-nginx
                 cp -a /tmp/wordpress-nginx/* /etc/nginx/
                 mv /etc/nginx/sites-enabled/example.com.conf /etc/nginx/sites-enabled/${WPDomainName}.conf
-                sed -i 's:/home/username/sites/example.com/public:'/var/www/wordpress/${WPDirectory}':gx' /etc/nginx/sites-enabled/${WPDomainName}.conf
-                sed -i 's/example.com/'${WPDomainName}'/g' /etc/nginx/sites-enabled/${WPDomainName}.conf
+                sed -i 's:/home/username/sites/example.com/public:/var/www/wordpress/${WPDirectory}:g' /etc/nginx/sites-enabled/${WPDomainName}.conf
+                sed -i 's/example.com/${WPDomainName}/g' /etc/nginx/sites-enabled/${WPDomainName}.conf
               mode: 000500
               owner: root
               group: root
