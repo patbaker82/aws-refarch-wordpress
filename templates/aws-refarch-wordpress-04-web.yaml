@@ -495,9 +495,9 @@ Resources:
             - install_webserver
             - configure_nginx
             - build_wordpress
-            - install_opcache
             - create_php_ini
             - install_wordpress
+            - install_opcache
             - start_webserver
         aws_configure:
           files:
@@ -591,7 +591,7 @@ Resources:
               content: !Sub |
                 #!/bin/bash -xe
                 aws s3 cp s3://${S3BucketName}/${S3KeyPrefix}config/opcache-instance-id.php .
-                cp -a /tmp/opcache-instance-id.php /var/www/wordpress/${WPDirectory}
+                cp -a /tmp/opcache-instance-id.php /var/www/wordpress/${WPDirectory}/opcache-instance-id.php
 
                 # create hidden opcache directory locally & change owner to apache
                 if [ ! -d /var/www/.opcache ]; then
