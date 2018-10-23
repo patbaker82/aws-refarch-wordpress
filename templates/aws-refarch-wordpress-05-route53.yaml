@@ -63,3 +63,9 @@ Resources:
             DNSName: !Ref DnsEndpoint
             EvaluateTargetHealth: True
             HostedZoneId: !Ref DnsHostId
+        - Name: !Join ['', [!Ref WPDomainName, '.']]
+          Type: A
+          AliasTarget:
+            DNSName: !Ref DnsEndpoint
+            EvaluateTargetHealth: True
+            HostedZoneId: !Ref DnsHostId
