@@ -183,13 +183,13 @@ Mappings:
     sa-east-1:
       AMI: ami-286f2a44
     us-east-1:
-      AMI: ami-028163689b209d39a
+      AMI: ami-0822b8643faaec88a
     us-east-2:
-      AMI: ami-069cb9f31cc4ff897
+      AMI: ami-0ba665b19a79bb583
     us-west-1:
-      AMI: ami-03b9136a181f721ac
+      AMI: ami-07f56496313edb794
     us-west-2:
-      AMI: ami-0b241ae54d1d95744
+      AMI: ami-020d76dfea3d2cff4
 
 Resources:
   BastionAutoScalingGroup:
