@@ -591,7 +591,12 @@ Resources:
               content: !Sub |
                 #!/bin/bash -xe
                 aws s3 cp s3://${S3BucketName}/${S3KeyPrefix}config/opcache-instance-id.php .
-                cp -a /tmp/opcache-instance-id.php /var/www/wordpress/${WPDirectory}/opcache-instance-id.php
+
+                # Only copy if it doesn't exist
+                # That way we an replace with noop PHP if neccessary and have it persist
+                if [ ! -f /var/www/wordpress/${WPDirectory}/opcache-instance-id.php ]; then
+                    cp -a /tmp/opcache-instance-id.php /var/www/wordpress/${WPDirectory}/opcache-instance-id.php
+                fi
 
                 # create hidden opcache directory locally & change owner to apache
                 if [ ! -d /var/www/.opcache ]; then
