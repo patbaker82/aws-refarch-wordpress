@@ -523,6 +523,7 @@ Resources:
           packages:
             yum:
               nginx: []
+              mariadb: []
               php: []
               php-fpm: []
               php-pear: []
