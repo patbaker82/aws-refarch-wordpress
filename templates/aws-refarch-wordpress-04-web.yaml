@@ -528,6 +528,7 @@ Resources:
               php-fpm: []
               php-pear: []
               php-mysqlnd: []
+              php-gd: []
           files:
             /tmp/backup_default_nginx_config.sh:
               content: |

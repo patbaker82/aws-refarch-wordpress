@@ -50,13 +50,10 @@ Resources:
               - PATCH
               - POST
               - PUT
-            DefaultTTL: 900
-            MaxTTL: 900
-            MinTTL: 900
             ForwardedValues:
               QueryString: true
-              Headers:
-                - Host
+              QueryStringCacheKeys:
+                - ver
             TargetOriginId: !Join ['', ['www.', !Ref WPDomainName]]
             ViewerProtocolPolicy: redirect-to-https
             Compress: true
@@ -69,13 +66,10 @@ Resources:
               - PATCH
               - POST
               - PUT
-            DefaultTTL: 900
-            MaxTTL: 900
-            MinTTL: 900
             ForwardedValues:
               QueryString: true
-              Headers:
-                - Host
+              QueryStringCacheKeys:
+                - ver
             TargetOriginId: !Join ['', ['www.', !Ref WPDomainName]]
             ViewerProtocolPolicy: redirect-to-https
             Compress: true
@@ -89,9 +83,6 @@ Resources:
             - PATCH
             - POST
             - PUT
-          DefaultTTL: 0
-          MaxTTL: 0
-          MinTTL: 0
           ForwardedValues:
             QueryString: true
             Cookies:
